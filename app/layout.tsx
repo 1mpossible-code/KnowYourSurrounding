@@ -15,6 +15,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Amparo',
   description: 'Cultural orientation guidance tailored to the user’s route, language comfort, and priorities.',
+  // Provide multiple icon fallbacks so browsers and platforms pick up a proper favicon / PWA icon
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/icon-192x192.png',
+  },
 };
 
 export const viewport: Viewport = {
