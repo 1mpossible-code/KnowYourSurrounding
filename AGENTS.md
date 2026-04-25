@@ -17,6 +17,7 @@ This table represents the user’s cultural orientation preferences and personal
 Fields:
 - `id`: UUID primary key
 - `user_id`: text ID from localStorage/demo user, unique (this is the stable id the frontend stores)
+- `name`: optional display name collected during onboarding
 - `origin_country`: where the user is coming from
 - `destination_country`: where the user is adapting to
 - `language_level`: general language comfort level in the destination language

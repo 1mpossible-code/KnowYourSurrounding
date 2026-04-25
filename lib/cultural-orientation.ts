@@ -39,6 +39,7 @@ export type LearningStyle = (typeof LEARNING_STYLES)[number];
 export type JobStatus = (typeof JOB_STATUSES)[number];
 
 export type ProfileInput = {
+  name?: string;
   originCountry?: string;
   destinationCountry?: string;
   languageLevel?: LanguageLevel;
@@ -50,6 +51,7 @@ export type ProfileInput = {
 
 /** Partial profile update for PATCH /api/profile/[userId] (all keys optional). */
 export type ProfilePatchInput = {
+  name?: string | null;
   originCountry?: string | null;
   destinationCountry?: string | null;
   languageLevel?: LanguageLevel | null;
@@ -129,6 +131,9 @@ export function validateProfilePatch(payload: unknown): ProfilePatchInput {
   const data = payload as Record<string, unknown>;
   const patch: ProfilePatchInput = {};
 
+  if ('name' in data) {
+    patch.name = data.name === null ? null : typeof data.name === 'string' ? data.name.trim() : null;
+  }
   if ('originCountry' in data) {
     patch.originCountry =
       data.originCountry === null ? null : typeof data.originCountry === 'string' ? data.originCountry.trim() : null;
@@ -219,6 +224,7 @@ function validateProfile(profile: Record<string, unknown>): ProfileInput {
   }
 
   return {
+    name: typeof profile.name === 'string' ? profile.name.trim() : undefined,
     originCountry: typeof profile.originCountry === 'string' ? profile.originCountry.trim() : undefined,
     destinationCountry: typeof profile.destinationCountry === 'string' ? profile.destinationCountry.trim() : undefined,
     languageLevel: languageLevel as LanguageLevel | undefined,
@@ -234,6 +240,7 @@ export function buildPrompt(input: ModuleJobInput) {
   const profile = input.profile;
   const profileSummary = profile
     ? [
+        profile.name ? `Name: ${profile.name}` : null,
         profile.originCountry ? `Origin country: ${profile.originCountry}` : null,
         profile.destinationCountry ? `Destination country: ${profile.destinationCountry}` : null,
         profile.languageLevel ? `Language level: ${profile.languageLevel}` : null,

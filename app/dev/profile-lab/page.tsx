@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from 'react';
 type Profile = {
   exists: boolean;
   userId: string;
+  name: string | null;
   originCountry: string | null;
   destinationCountry: string | null;
   languageLevel: string | null;
@@ -25,7 +26,7 @@ const defaultUserId = 'demo-user';
 
 export default function ProfileLabPage() {
   const [userId, setUserId] = useState(defaultUserId);
-  const [patchBody, setPatchBody] = useState(JSON.stringify({ originCountry: 'Ukraine', destinationCountry: 'Germany', languageLevel: 'intermediate' }, null, 2));
+  const [patchBody, setPatchBody] = useState(JSON.stringify({ name: 'Mila', originCountry: 'Ukraine', destinationCountry: 'Germany', languageLevel: 'intermediate' }, null, 2));
   const [favoriteJobId, setFavoriteJobId] = useState('');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);

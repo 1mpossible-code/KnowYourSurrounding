@@ -44,6 +44,7 @@ describe('module generation helpers', () => {
 
   test('validateProfilePatch parses nullable and array values', () => {
     const patch = validateProfilePatch({
+      name: 'Mila',
       originCountry: 'Ukraine',
       destinationCountry: null,
       priorityTopics: ['work', 'communication'],
@@ -51,6 +52,7 @@ describe('module generation helpers', () => {
       avoidTopics: null,
     });
 
+    expect(patch.name).toBe('Mila');
     expect(patch.originCountry).toBe('Ukraine');
     expect(patch.destinationCountry).toBeNull();
     expect(patch.priorityTopics).toEqual(['work', 'communication']);

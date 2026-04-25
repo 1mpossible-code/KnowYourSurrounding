@@ -14,6 +14,7 @@ export type ProfileResponse = {
   exists: boolean;
   id?: string;
   userId: string;
+  name: string | null;
   originCountry: string | null;
   destinationCountry: string | null;
   languageLevel: LanguageLevel | null;
@@ -30,6 +31,7 @@ export function emptyProfileResponse(userId: string): ProfileResponse {
   return {
     exists: false,
     userId,
+    name: null,
     originCountry: null,
     destinationCountry: null,
     languageLevel: null,

@@ -2,6 +2,11 @@ import Link from 'next/link';
 
 const cards = [
   {
+    href: '/onboarding',
+    title: 'Onboarding flow',
+    description: 'Walk through the real multi-step profile creation experience used when no local uid exists.',
+  },
+  {
     href: '/dev/module-gen',
     title: 'Module generation',
     description: 'Create persisted generation jobs, stream markdown, and inspect recent stored jobs.',
@@ -28,7 +33,7 @@ export default function DevIndexPage() {
           <p className="mt-3 max-w-3xl text-lg leading-8">Use these internal pages to test generation, chatbot suggestion prompts, and profile favorites against the current API contracts.</p>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {cards.map((card) => (
             <Link
               key={card.href}

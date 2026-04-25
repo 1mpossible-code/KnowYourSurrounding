@@ -26,6 +26,7 @@ describe('profile and favorites helpers', () => {
     expect(emptyProfileResponse('demo-user')).toEqual({
       exists: false,
       userId: 'demo-user',
+      name: null,
       originCountry: null,
       destinationCountry: null,
       languageLevel: null,

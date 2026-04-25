@@ -14,6 +14,7 @@ const TABLE = 'cultural_orientation_profiles';
 export type ProfileRow = {
   id: string;
   user_id: string;
+  name: string | null;
   origin_country: string | null;
   destination_country: string | null;
   language_level: LanguageLevel | null;
@@ -67,6 +68,7 @@ function rowToResponse(row: ProfileRow): ProfileResponse {
     exists: true,
     id: row.id,
     userId: row.user_id,
+    name: row.name,
     originCountry: row.origin_country,
     destinationCountry: row.destination_country,
     languageLevel: row.language_level,
@@ -97,6 +99,7 @@ export async function fetchProfileByUserId(userId: string) {
 function toInsertBody(userId: string, profile: ProfileResponse) {
   return {
     user_id: userId,
+    name: profile.name,
     origin_country: profile.originCountry,
     destination_country: profile.destinationCountry,
     language_level: profile.languageLevel,
@@ -139,6 +142,7 @@ export async function upsertProfileByUserId(userId: string, patch: ProfilePatchI
     exists: true,
     id: base.id,
     userId,
+    name: patch.name !== undefined ? patch.name ?? null : base.name,
     originCountry: patch.originCountry !== undefined ? patch.originCountry ?? null : base.originCountry,
     destinationCountry:
       patch.destinationCountry !== undefined ? patch.destinationCountry ?? null : base.destinationCountry,
