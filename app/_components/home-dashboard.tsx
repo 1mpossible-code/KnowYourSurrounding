@@ -347,7 +347,7 @@ function syncJobsIntoWorkspaces(jobs: JobSummary[], profile: ProfileResponse) {
 async function fetchJobs(jobIds: string[]) {
   if (jobIds.length === 0) return [] as JobSummary[];
   const query = encodeURIComponent(jobIds.join(','));
-  const response = await fetch(`/api/modules/generate/jobs?ids=${query}`, { cache: 'no-store' });
+  const response = await fetch(`/api/modules/generate/jobs?ids=${query}`);
   const data = (await response.json()) as { jobs?: JobSummary[]; error?: string };
   if (!response.ok) throw new Error(data.error || 'Failed to load jobs.');
   return data.jobs || [];
@@ -412,7 +412,7 @@ export function HomeDashboard() {
       router.replace('/onboarding');
       return;
     }
-    fetch(`/api/profile/${encodeURIComponent(storedUserId)}`, { cache: 'no-store' })
+    fetch(`/api/profile/${encodeURIComponent(storedUserId)}`)
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to load profile.');

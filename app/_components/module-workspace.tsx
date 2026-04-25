@@ -211,7 +211,7 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
 
       source.onerror = async () => {
         source.close();
-        const fallback = await fetch(`/api/modules/generate/${jobId}`, { cache: 'no-store' })
+        const fallback = await fetch(`/api/modules/generate/${jobId}`)
           .then((res) => res.json())
           .catch(() => null);
         if (fallback) {
@@ -298,7 +298,7 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
       router.replace('/onboarding');
       return;
     }
-    fetch(`/api/profile/${encodeURIComponent(storedUserId)}`, { cache: 'no-store' })
+    fetch(`/api/profile/${encodeURIComponent(storedUserId)}`)
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to load profile.');
@@ -331,7 +331,7 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
     }
     if (activeStage.jobId && activeStage.status === 'completed' && !activeStage.text.trim()) {
       queueMicrotask(async () => {
-        const fallback = await fetch(`/api/modules/generate/${activeStage.jobId}`, { cache: 'no-store' })
+        const fallback = await fetch(`/api/modules/generate/${activeStage.jobId}`)
           .then((res) => res.json())
           .catch(() => null);
         if (fallback?.module?.text) {

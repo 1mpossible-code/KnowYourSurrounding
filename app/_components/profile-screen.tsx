@@ -55,7 +55,7 @@ export function ProfileScreen() {
       return;
     }
 
-    fetch(`/api/profile/${encodeURIComponent(storedUserId)}`, { cache: 'no-store' })
+    fetch(`/api/profile/${encodeURIComponent(storedUserId)}`)
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to load profile.');
