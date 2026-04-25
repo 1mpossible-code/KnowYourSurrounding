@@ -25,18 +25,18 @@ import { buildStarterModulePayload, selectStarterGuides, writeStoredStarterGuide
 const STEPS = [
   {
     eyebrow: 'Welcome',
-    title: 'Let’s set up your cultural orientation profile',
-    description: 'A few short steps will help us shape guidance around your real context and the way you like to learn.',
+    title: 'Set up your cultural orientation profile',
+    description: 'A few short steps will shape guidance around your real context and the way you like to learn.',
   },
   {
     eyebrow: 'Your route',
-    title: 'Tell us where you are coming from and where you are adapting to',
-    description: 'We will use this to frame examples, tone, and everyday expectations in a way that feels grounded.',
+    title: 'Where are you coming from, and where are you adapting to?',
+    description: "We'll use this to frame examples, tone, and expectations in a way that feels grounded.",
   },
   {
     eyebrow: 'Language comfort',
     title: 'How comfortable do you feel with the local language?',
-    description: 'Choose the level that feels most honest today. We can always refine this later.',
+    description: "Choose the level that feels most honest today — this can always be refined later.",
   },
   {
     eyebrow: 'Priority topics',
@@ -46,16 +46,16 @@ const STEPS = [
   {
     eyebrow: 'Learning style',
     title: 'How would you like guidance to feel?',
-    description: 'Pick the format that feels easiest to absorb when life gets busy or unfamiliar.',
+    description: "Pick the format that's easiest to absorb when life gets busy or unfamiliar.",
   },
   {
     eyebrow: 'Support areas',
     title: 'What would you like help with in daily life?',
-    description: 'These areas guide what kinds of modules and explanations appear first.',
+    description: 'These guide which kinds of modules and explanations appear first.',
   },
   {
     eyebrow: 'Boundaries',
-    title: 'Are there any topics you would rather avoid?',
+    title: 'Are there topics you would rather avoid?',
     description: 'Leave everything unselected if nothing feels sensitive right now.',
   },
   {
@@ -72,43 +72,66 @@ function ProgressSidebar({ currentStep }: { currentStep: number }) {
   const percent = ((currentStep + 1) / total) * 100;
 
   return (
-    <aside className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--royal-gold)] md:rounded-[2rem] md:p-5 md:shadow-[10px_10px_0_var(--royal-gold)] xl:sticky xl:top-6">
+    <aside className="rounded-[1.75rem] border-2 border-[var(--regal-navy)] bg-[var(--surface-card)] p-5 shadow-[6px_6px_0_var(--royal-gold)] xl:sticky xl:top-6">
+      {/* Brand + step count */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)] md:text-sm">Profile setup</p>
-          <p className="mt-2 text-2xl font-black leading-tight">Step {currentStep + 1}</p>
+          <p className="font-serif text-2xl font-medium text-[var(--regal-navy)]">Amparo</p>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">Profile setup</p>
         </div>
-        <div className="rounded-full border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] px-3 py-1 text-sm font-bold">
-          {currentStep + 1} / {total}
-        </div>
+        <span className="shrink-0 rounded-full border border-[var(--border-soft)] bg-[var(--lemon-chiffon)] px-3 py-1 text-sm font-semibold text-[var(--regal-navy)]">
+          {currentStep + 1}/{total}
+        </span>
       </div>
 
+      {/* Progress bar */}
       <div
-        className="mt-4 h-3 rounded-full bg-[var(--lemon-chiffon)]"
+        className="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--lemon-chiffon)]"
         role="progressbar"
         aria-valuenow={currentStep + 1}
         aria-valuemin={1}
         aria-valuemax={total}
-        aria-label={`Onboarding step ${currentStep + 1} of ${total}`}
+        aria-label={`Step ${currentStep + 1} of ${total}`}
       >
-        <div className="h-full rounded-full bg-[var(--royal-gold)] transition-all" style={{ width: `${percent}%` }} />
+        <div
+          className="h-full rounded-full bg-[var(--royal-gold)] transition-all duration-500 ease-out"
+          style={{ width: `${percent}%` }}
+        />
       </div>
 
-      <div className="mt-5 rounded-[1.5rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sandy-brown)]">Current focus</p>
-        <p className="mt-2 text-lg font-black leading-tight">{current.eyebrow}</p>
-        <p className="mt-2 text-sm leading-6 opacity-80">{current.title}</p>
+      {/* Step dots */}
+      <div className="mt-4 flex gap-1.5">
+        {STEPS.map((_, i) => (
+          <div
+            key={i}
+            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+              i < currentStep
+                ? 'bg-[var(--sandy-brown)]'
+                : i === currentStep
+                  ? 'bg-[var(--regal-navy)]'
+                  : 'bg-[var(--lemon-chiffon)]'
+            }`}
+          />
+        ))}
       </div>
 
+      {/* Current step info */}
+      <div className="mt-5 rounded-2xl border border-[var(--border-faint)] bg-[var(--lemon-chiffon)] p-4">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">Current</p>
+        <p className="mt-2 font-serif text-lg font-medium leading-snug text-[var(--regal-navy)]">{current.eyebrow}</p>
+        <p className="mt-1.5 text-sm leading-6 text-[var(--text-muted)]">{current.description}</p>
+      </div>
+
+      {/* Next step preview */}
       {next ? (
-        <div className="mt-3 rounded-[1.5rem] border-2 border-dashed border-[var(--regal-navy)] bg-white p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sandy-brown)]">Up next</p>
-          <p className="mt-2 font-bold leading-6">{next.eyebrow}</p>
-          <p className="mt-1 text-sm leading-6 opacity-75">{next.title}</p>
+        <div className="mt-3 rounded-2xl border border-dashed border-[var(--border-soft)] p-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">Up next</p>
+          <p className="mt-2 font-semibold text-[var(--regal-navy)]">{next.eyebrow}</p>
+          <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">{next.title}</p>
         </div>
       ) : (
-        <div className="mt-3 rounded-[1.5rem] border-2 border-dashed border-[var(--regal-navy)] bg-white p-4 text-sm leading-6 opacity-80">
-          You’re at the final review. Once this looks right, we’ll save your profile and start your first guide.
+        <div className="mt-3 rounded-2xl border border-dashed border-[var(--border-soft)] p-4 text-sm leading-6 text-[var(--text-muted)]">
+          Final step. Once this looks right, we'll save your profile and start your first guide.
         </div>
       )}
     </aside>
@@ -118,56 +141,118 @@ function ProgressSidebar({ currentStep }: { currentStep: number }) {
 function StepHeader({ step }: { step: (typeof STEPS)[number] }) {
   return (
     <div>
-      <div className="inline-flex rounded-full border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--sandy-brown)] md:text-sm">
+      <span className="inline-flex rounded-full border border-[var(--border-soft)] bg-[var(--lemon-chiffon)] px-3 py-1 text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">
         {step.eyebrow}
-      </div>
-      <h1 className="mt-4 text-3xl font-black leading-tight md:text-4xl">{step.title}</h1>
-      <p className="mt-3 max-w-2xl text-base leading-7 md:text-lg md:leading-8">{step.description}</p>
+      </span>
+      <h1 className="mt-4 font-serif text-3xl font-medium leading-snug text-[var(--regal-navy)] md:text-4xl">
+        {step.title}
+      </h1>
+      <p className="mt-3 max-w-lg text-sm leading-7 text-[var(--text-muted)] md:text-base md:leading-8">
+        {step.description}
+      </p>
     </div>
   );
 }
 
-function ChoiceCard({ selected, label, onClick }: { selected: boolean; label: string; onClick: () => void }) {
+function ChoiceCard({
+  selected,
+  label,
+  onClick,
+}: {
+  selected: boolean;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-[1.5rem] border-2 px-4 py-4 text-left transition ${
+      className={`group relative rounded-2xl border px-4 py-3.5 text-left transition-all duration-150 focus-visible:outline-2 focus-visible:outline-[var(--sandy-brown)] active:scale-[0.98] ${
         selected
-          ? 'border-[var(--regal-navy)] bg-[var(--royal-gold)]'
-          : 'border-[var(--regal-navy)] bg-white hover:bg-[var(--lemon-chiffon)]'
+          ? 'border-[var(--regal-navy)] bg-[var(--royal-gold)] shadow-[3px_3px_0_var(--regal-navy)]'
+          : 'border-[var(--border-soft)] bg-[var(--surface-card)] hover:border-[var(--regal-navy)] hover:bg-[var(--lemon-chiffon)]'
       }`}
     >
-      <span className="text-sm font-bold leading-6 md:text-base">{label}</span>
+      <span className="flex items-center gap-2.5">
+        <span
+          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[1.5px] text-[10px] transition-all ${
+            selected
+              ? 'border-[var(--regal-navy)] bg-[var(--regal-navy)] text-white'
+              : 'border-[var(--border-soft)] bg-white'
+          }`}
+        >
+          {selected ? '✓' : ''}
+        </span>
+        <span className="text-sm font-semibold text-[var(--regal-navy)] md:text-base">{label}</span>
+      </span>
     </button>
   );
 }
 
 function SectionActions({ onSelectAll, onClearAll }: { onSelectAll: () => void; onClearAll: () => void }) {
   return (
-    <div className="flex flex-wrap gap-3">
-      <button type="button" onClick={onSelectAll} className="rounded-full border-2 border-[var(--regal-navy)] bg-white px-4 py-2 text-sm font-bold">
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={onSelectAll}
+        className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-card)] px-4 py-2 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--lemon-chiffon)] hover:border-[var(--regal-navy)]"
+      >
         Select all
       </button>
-      <button type="button" onClick={onClearAll} className="rounded-full border-2 border-[var(--regal-navy)] bg-white px-4 py-2 text-sm font-bold">
+      <button
+        type="button"
+        onClick={onClearAll}
+        className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-card)] px-4 py-2 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--lemon-chiffon)] hover:border-[var(--regal-navy)]"
+      >
         Clear all
       </button>
     </div>
   );
 }
 
+type StepProps = {
+  form: OnboardingFormData;
+  setForm: React.Dispatch<React.SetStateAction<OnboardingFormData>>;
+};
+
 function NameStep({ form, setForm }: StepProps) {
   return (
     <div className="space-y-4">
-      <label className="block text-sm font-semibold uppercase tracking-[0.2em] text-[var(--sandy-brown)]">What should we call you?</label>
-      <input
-        value={form.name}
-        onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-        placeholder="For example: Mila"
-        className="w-full rounded-[1.5rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] px-5 py-4 text-lg outline-none focus:border-[var(--sandy-brown)]"
-      />
-      <p className="text-sm leading-7 opacity-80">A simple name is enough. We will only use it to make the experience feel more personal.</p>
+      <label className="block">
+        <span className="block text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">
+          What should we call you?
+        </span>
+        <input
+          value={form.name}
+          onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+          placeholder="For example: Mila"
+          className="mt-3 w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-sunken)] px-5 py-3.5 text-base text-[var(--foreground)] outline-none transition focus:border-[var(--sandy-brown)] focus:ring-2 focus:ring-[var(--sandy-brown)]/20 placeholder:text-[var(--text-muted)]"
+        />
+      </label>
+      <p className="text-sm leading-7 text-[var(--text-muted)]">
+        A first name is enough. We only use it to make the experience feel more personal.
+      </p>
     </div>
+  );
+}
+
+function SelectField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="block">
+      <span className="mb-2.5 block text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full appearance-none rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-sunken)] px-5 py-3.5 text-sm text-[var(--foreground)] outline-none transition focus:border-[var(--sandy-brown)] focus:ring-2 focus:ring-[var(--sandy-brown)]/20"
+      >
+        <option value="">Choose one</option>
+        {COUNTRY_OPTIONS.map((country) => (
+          <option key={country} value={country}>
+            {country}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -188,26 +273,6 @@ function CountryStep({ form, setForm }: StepProps) {
   );
 }
 
-function SelectField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-semibold uppercase tracking-[0.2em] text-[var(--sandy-brown)]">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-[1.5rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] px-4 py-4 outline-none focus:border-[var(--sandy-brown)]"
-      >
-        <option value="">Choose one</option>
-        {COUNTRY_OPTIONS.map((country) => (
-          <option key={country} value={country}>
-            {country}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
 function SingleChoiceStep({
   options,
   value,
@@ -217,7 +282,18 @@ function SingleChoiceStep({
   value: string;
   onSelect: (next: string) => void;
 }) {
-  return <div className="grid gap-3 md:grid-cols-2">{options.map((option) => <ChoiceCard key={option.value} selected={value === option.value} label={option.label} onClick={() => onSelect(option.value)} />)}</div>;
+  return (
+    <div className="grid gap-2.5 md:grid-cols-2">
+      {options.map((option) => (
+        <ChoiceCard
+          key={option.value}
+          selected={value === option.value}
+          label={option.label}
+          onClick={() => onSelect(option.value)}
+        />
+      ))}
+    </div>
+  );
 }
 
 function MultiChoiceStep({
@@ -236,15 +312,19 @@ function MultiChoiceStep({
   return (
     <div className="space-y-4">
       <SectionActions onSelectAll={onSelectAll} onClearAll={onClearAll} />
-      <div className="grid gap-3 md:grid-cols-2">{options.map((option) => <ChoiceCard key={option.value} selected={selected.includes(option.value)} label={option.label} onClick={() => onToggle(option.value)} />)}</div>
+      <div className="grid gap-2.5 md:grid-cols-2">
+        {options.map((option) => (
+          <ChoiceCard
+            key={option.value}
+            selected={selected.includes(option.value)}
+            label={option.label}
+            onClick={() => onToggle(option.value)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
-
-type StepProps = {
-  form: OnboardingFormData;
-  setForm: React.Dispatch<React.SetStateAction<OnboardingFormData>>;
-};
 
 function SummaryStep({ form }: { form: OnboardingFormData }) {
   const rows = [
@@ -254,15 +334,15 @@ function SummaryStep({ form }: { form: OnboardingFormData }) {
     ['Learning style', form.preferredLearningStyle || 'Not selected'],
     ['Priority topics', getSelectedLabels(form.priorityTopics).join(', ')],
     ['Help with', getHelpSelectionLabels(form.wantsHelpWith).join(', ')],
-    ['Topics to steer clear of', form.avoidTopics.length > 0 ? getAvoidSelectionLabels(form.avoidTopics).join(', ') : 'None selected'],
+    ['Topics to avoid', form.avoidTopics.length > 0 ? getAvoidSelectionLabels(form.avoidTopics).join(', ') : 'None selected'],
   ];
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {rows.map(([label, value]) => (
-        <div key={label} className="rounded-[1.5rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4">
-          <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--sandy-brown)]">{label}</div>
-          <div className="mt-2 leading-7">{value}</div>
+        <div key={label} className="rounded-2xl border border-[var(--border-faint)] bg-[var(--surface-sunken)] px-4 py-3.5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">{label}</p>
+          <p className="mt-1.5 text-sm leading-6 text-[var(--foreground)] md:text-base">{value || '—'}</p>
         </div>
       ))}
     </div>
@@ -287,29 +367,60 @@ function renderStep(step: number, form: OnboardingFormData, setForm: StepProps['
   if (step === 0) return <NameStep form={form} setForm={setForm} />;
   if (step === 1) return <CountryStep form={form} setForm={setForm} />;
   if (step === 2) {
-    return <SingleChoiceStep options={LANGUAGE_LEVEL_OPTIONS} value={form.languageLevel} onSelect={(value) => setForm((current) => ({ ...current, languageLevel: value as OnboardingFormData['languageLevel'] }))} />;
+    return (
+      <SingleChoiceStep
+        options={LANGUAGE_LEVEL_OPTIONS}
+        value={form.languageLevel}
+        onSelect={(value) => setForm((current) => ({ ...current, languageLevel: value as OnboardingFormData['languageLevel'] }))}
+      />
+    );
   }
   if (step === 3) {
     return (
       <MultiChoiceStep
         options={TOPIC_OPTIONS}
         selected={form.priorityTopics}
-        onToggle={(value) => setForm((current) => ({ ...current, priorityTopics: toggleArrayValue(current.priorityTopics, value) as OnboardingFormData['priorityTopics'] }))}
-        onSelectAll={() => setForm((current) => ({ ...current, priorityTopics: TOPIC_OPTIONS.map((option) => option.value) as OnboardingFormData['priorityTopics'] }))}
+        onToggle={(value) =>
+          setForm((current) => ({
+            ...current,
+            priorityTopics: toggleArrayValue(current.priorityTopics, value) as OnboardingFormData['priorityTopics'],
+          }))
+        }
+        onSelectAll={() =>
+          setForm((current) => ({
+            ...current,
+            priorityTopics: TOPIC_OPTIONS.map((option) => option.value) as OnboardingFormData['priorityTopics'],
+          }))
+        }
         onClearAll={() => setForm((current) => ({ ...current, priorityTopics: [] }))}
       />
     );
   }
   if (step === 4) {
-    return <SingleChoiceStep options={LEARNING_STYLE_OPTIONS} value={form.preferredLearningStyle} onSelect={(value) => setForm((current) => ({ ...current, preferredLearningStyle: value as OnboardingFormData['preferredLearningStyle'] }))} />;
+    return (
+      <SingleChoiceStep
+        options={LEARNING_STYLE_OPTIONS}
+        value={form.preferredLearningStyle}
+        onSelect={(value) =>
+          setForm((current) => ({
+            ...current,
+            preferredLearningStyle: value as OnboardingFormData['preferredLearningStyle'],
+          }))
+        }
+      />
+    );
   }
   if (step === 5) {
     return (
       <MultiChoiceStep
         options={HELP_OPTIONS}
         selected={form.wantsHelpWith}
-        onToggle={(value) => setForm((current) => ({ ...current, wantsHelpWith: toggleArrayValue(current.wantsHelpWith, value) }))}
-        onSelectAll={() => setForm((current) => ({ ...current, wantsHelpWith: HELP_OPTIONS.map((option) => option.value) }))}
+        onToggle={(value) =>
+          setForm((current) => ({ ...current, wantsHelpWith: toggleArrayValue(current.wantsHelpWith, value) }))
+        }
+        onSelectAll={() =>
+          setForm((current) => ({ ...current, wantsHelpWith: HELP_OPTIONS.map((option) => option.value) }))
+        }
         onClearAll={() => setForm((current) => ({ ...current, wantsHelpWith: [] }))}
       />
     );
@@ -319,8 +430,12 @@ function renderStep(step: number, form: OnboardingFormData, setForm: StepProps['
       <MultiChoiceStep
         options={AVOID_TOPIC_OPTIONS}
         selected={form.avoidTopics}
-        onToggle={(value) => setForm((current) => ({ ...current, avoidTopics: toggleArrayValue(current.avoidTopics, value) }))}
-        onSelectAll={() => setForm((current) => ({ ...current, avoidTopics: AVOID_TOPIC_OPTIONS.map((option) => option.value) }))}
+        onToggle={(value) =>
+          setForm((current) => ({ ...current, avoidTopics: toggleArrayValue(current.avoidTopics, value) }))
+        }
+        onSelectAll={() =>
+          setForm((current) => ({ ...current, avoidTopics: AVOID_TOPIC_OPTIONS.map((option) => option.value) }))
+        }
         onClearAll={() => setForm((current) => ({ ...current, avoidTopics: [] }))}
       />
     );
@@ -366,12 +481,12 @@ export function OnboardingFlow() {
 
   function handleNext() {
     if (!canContinue || currentStep === STEPS.length - 1) return;
-    setCurrentStep((stepIndex) => stepIndex + 1);
+    setCurrentStep((s) => s + 1);
   }
 
   function handleBack() {
     if (currentStep === 0) return;
-    setCurrentStep((stepIndex) => stepIndex - 1);
+    setCurrentStep((s) => s - 1);
   }
 
   async function handleFinish() {
@@ -416,19 +531,19 @@ export function OnboardingFlow() {
       writeStoredStarterGuideJobs(storedJobs);
       window.localStorage.setItem(LOCAL_USER_ID_KEY, userId);
       router.replace('/');
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Failed to save your profile.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save your profile.');
       setSubmitting(false);
     }
   }
 
   if (checkingSession) {
     return (
-      <main className="min-h-screen bg-[var(--lemon-chiffon)] px-4 py-8 text-[var(--regal-navy)] md:px-6 md:py-10">
+      <main className="min-h-screen bg-[var(--background)] px-4 py-8 text-[var(--foreground)]">
         <div className="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center">
-          <div className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white px-6 py-8 text-center shadow-[10px_10px_0_var(--royal-gold)] md:rounded-[2rem] md:px-8 md:py-10 md:shadow-[12px_12px_0_var(--royal-gold)]">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--sandy-brown)]">Checking session</p>
-            <h1 className="mt-3 text-3xl font-black">Preparing your onboarding flow</h1>
+          <div className="text-center">
+            <div className="mx-auto h-10 w-10 animate-spin-slow rounded-full border-2 border-[var(--regal-navy)] border-t-[var(--royal-gold)]" />
+            <p className="mt-4 text-sm text-[var(--text-muted)]">Checking your session…</p>
           </div>
         </div>
       </main>
@@ -436,48 +551,62 @@ export function OnboardingFlow() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--lemon-chiffon)] px-3 py-4 text-[var(--regal-navy)] md:px-6 md:py-8">
-      <div className="mx-auto grid max-w-7xl gap-4 md:gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <main className="min-h-screen bg-[var(--background)] px-4 py-8 text-[var(--foreground)] md:px-6 md:py-10">
+      <div className="mx-auto grid max-w-6xl gap-5 md:gap-6 xl:grid-cols-[0.85fr_1.15fr]">
         <ProgressSidebar currentStep={currentStep} />
 
-        <section className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--sandy-brown)] md:rounded-[2rem] md:p-8 md:shadow-[10px_10px_0_var(--sandy-brown)]">
+        {/* Main step panel */}
+        <section className="rounded-[1.75rem] border-2 border-[var(--regal-navy)] bg-[var(--surface-card)] p-5 shadow-[6px_6px_0_var(--sandy-brown)] md:rounded-[2rem] md:p-8 md:shadow-[8px_8px_0_var(--sandy-brown)] animate-fade-in">
           <StepHeader step={step} />
-          <div className="mt-8">{renderStep(currentStep, form, setForm)}</div>
+          <div className="mt-7">{renderStep(currentStep, form, setForm)}</div>
 
-          {error ? <p className="mt-6 rounded-[1.5rem] border-2 border-[var(--tomato)] bg-white px-4 py-3 text-[var(--tomato)]">{error}</p> : null}
+          {/* Error messages */}
+          {error ? (
+            <p className="mt-5 rounded-2xl border border-[var(--tomato)]/30 bg-[var(--tomato)]/8 px-4 py-3 text-sm text-[var(--tomato)]">
+              {error}
+            </p>
+          ) : null}
           {currentStep === 1 && form.originCountry === form.destinationCountry && form.originCountry ? (
-            <p className="mt-6 rounded-[1.5rem] border-2 border-[var(--tomato)] bg-white px-4 py-3 text-[var(--tomato)]">
+            <p className="mt-5 rounded-2xl border border-[var(--tomato)]/30 bg-[var(--tomato)]/8 px-4 py-3 text-sm text-[var(--tomato)]">
               Choose two different countries so the adaptation route is clear.
             </p>
           ) : null}
 
-          <div className="mt-8 flex flex-col-reverse gap-3 border-t-2 border-dashed border-[var(--regal-navy)] pt-6 sm:flex-row sm:items-center sm:justify-between">
+          {/* Navigation */}
+          <div className="mt-8 flex flex-col-reverse gap-3 border-t border-[var(--border-faint)] pt-6 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
               onClick={handleBack}
               disabled={currentStep === 0 || submitting}
-              className="w-full rounded-full border-2 border-[var(--regal-navy)] bg-white px-5 py-3 font-bold transition hover:bg-[var(--lemon-chiffon)] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-xl border border-[var(--border-soft)] bg-[var(--surface-card)] px-5 py-2.5 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--lemon-chiffon)] hover:border-[var(--regal-navy)] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
             >
-              Back
+              ← Back
             </button>
 
             {currentStep === STEPS.length - 1 ? (
               <button
                 type="button"
                 onClick={() => void handleFinish()}
-                disabled={submitting}
-                className="w-full rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-3 font-bold transition hover:bg-[var(--sandy-brown)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                disabled={submitting || !canContinue}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-6 py-2.5 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--sandy-brown)] hover:text-white disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] sm:w-auto"
               >
-                {submitting ? 'Creating your profile and first guides…' : 'Make my profile'}
+                {submitting ? (
+                  <>
+                    <span className="animate-spin-slow inline-block h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent" />
+                    Creating your profile…
+                  </>
+                ) : (
+                  'Save my profile →'
+                )}
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleNext}
                 disabled={!canContinue}
-                className="w-full rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-3 font-bold transition hover:bg-[var(--sandy-brown)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                className="inline-flex w-full items-center justify-center rounded-xl border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-6 py-2.5 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--sandy-brown)] hover:text-white disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98] sm:w-auto"
               >
-                Continue
+                Continue →
               </button>
             )}
           </div>

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,9 +12,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: 'Amparo',
-  description: 'Cultural orientation guidance tailored to the user’s route, language comfort, and priorities.',
+  description: 'Cultural orientation guidance tailored to your route, language comfort, and priorities.',
   // Provide multiple icon fallbacks so browsers and platforms pick up a proper favicon / PWA icon
   icons: {
     icon: '/favicon.ico',
@@ -28,7 +34,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#faf0ca',
+  themeColor: '#fffaf2',
 };
 
 export default function RootLayout({
@@ -39,7 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

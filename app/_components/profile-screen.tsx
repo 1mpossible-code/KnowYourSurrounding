@@ -14,13 +14,34 @@ import {
 } from '@/lib/onboarding';
 import type { ProfileResponse } from '@/lib/profile-api';
 
-function DetailCard({ label, value }: { label: string; value: string }) {
+function Avatar({ name }: { name?: string | null }) {
+  const initials = name
+    ? name
+        .split(' ')
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : '?';
+
   return (
-    <div className="rounded-[1.35rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4">
-      <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">{label}</div>
-      <div className="mt-2 text-sm leading-6 md:text-base">{value}</div>
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] text-lg font-bold text-[var(--regal-navy)]">
+      {initials}
     </div>
   );
+}
+
+function DetailCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-[var(--border-faint)] bg-[var(--surface-card)] p-4 transition-shadow hover:shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">{label}</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--foreground)] md:text-base">{value || '—'}</p>
+    </div>
+  );
+}
+
+function SkeletonBlock({ className }: { className?: string }) {
+  return <div className={`animate-shimmer rounded-xl ${className}`} />;
 }
 
 export function ProfileScreen() {
@@ -52,50 +73,89 @@ export function ProfileScreen() {
 
   if (!profile) {
     return (
-      <main className="min-h-screen bg-[var(--lemon-chiffon)] px-4 py-8 text-[var(--regal-navy)]">
-        <div className="mx-auto max-w-4xl rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-6 shadow-[8px_8px_0_var(--royal-gold)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">Loading profile</p>
-          <h1 className="mt-3 text-3xl font-black">Preparing your settings</h1>
+      <main className="min-h-screen bg-[var(--background)] px-4 py-8 text-[var(--foreground)]">
+        <div className="mx-auto max-w-3xl space-y-6">
+          <SkeletonBlock className="h-32" />
+          <div className="grid gap-4 md:grid-cols-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonBlock key={i} className="h-20" />
+            ))}
+          </div>
+          <SkeletonBlock className="h-40" />
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[var(--lemon-chiffon)] px-3 py-4 text-[var(--regal-navy)] md:px-6 md:py-8">
-      <div className="mx-auto max-w-5xl space-y-4 md:space-y-6">
-        <section className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--royal-gold)] md:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-2xl">
-              <Link href="/" className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">
-                ← Back home
-              </Link>
-              <h1 className="mt-3 text-3xl font-black md:text-4xl">Profile</h1>
-              <p className="mt-3 text-base leading-7 md:text-lg md:leading-8">
-                This is the context shaping your modules, suggestions, and saved notes.
+    <main className="min-h-screen bg-[var(--background)] px-4 py-8 text-[var(--foreground)] md:px-6 md:py-10">
+      <div className="mx-auto max-w-3xl space-y-6 animate-fade-in">
+
+        {/* Header card */}
+        <section className="rounded-[1.75rem] border-2 border-[var(--regal-navy)] bg-[var(--surface-card)] p-5 shadow-[6px_6px_0_var(--royal-gold)] md:p-7">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)] transition-opacity hover:opacity-70"
+          >
+            ← Back home
+          </Link>
+
+          <div className="mt-5 flex items-center gap-4">
+            <Avatar name={profile.name} />
+            <div>
+              <h1 className="font-serif text-2xl font-medium leading-tight text-[var(--regal-navy)] md:text-3xl">
+                {profile.name ? profile.name : 'Your Profile'}
+              </h1>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">
+                {profile.originCountry && profile.destinationCountry
+                  ? `${profile.originCountry} → ${profile.destinationCountry}`
+                  : 'Cultural orientation profile'}
               </p>
             </div>
-            <div className="rounded-[1.5rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] px-4 py-3 text-sm font-semibold">
-              {profile.name ? `Signed in as ${profile.name}` : 'Demo profile'}
-            </div>
+          </div>
+
+          <p className="mt-4 max-w-xl text-sm leading-7 text-[var(--text-muted)] md:text-base md:leading-8">
+            This context shapes your modules, suggestions, and saved notes.
+          </p>
+        </section>
+
+        {/* Detail cards grid */}
+        <section className="grid gap-3 md:grid-cols-2">
+          <DetailCard
+            label="Journey"
+            value={`${profile.originCountry || 'Unknown origin'} → ${profile.destinationCountry || 'Unknown destination'}`}
+          />
+          <DetailCard
+            label="Language comfort"
+            value={profile.languageLevel ? LANGUAGE_LEVEL_LABELS[profile.languageLevel] : 'Not set'}
+          />
+          <DetailCard
+            label="Learning style"
+            value={profile.preferredLearningStyle ? LEARNING_STYLE_LABELS[profile.preferredLearningStyle] : 'Not set'}
+          />
+          <DetailCard label="Saved notes" value={`${profile.savedJobIds.length} favorited`} />
+          <DetailCard
+            label="Priority topics"
+            value={profile.priorityTopics.length ? getSelectedLabels(profile.priorityTopics).join(', ') : 'None yet'}
+          />
+          <DetailCard
+            label="Daily-life support"
+            value={profile.wantsHelpWith.length ? getHelpSelectionLabels(profile.wantsHelpWith).join(', ') : 'None yet'}
+          />
+          <div className="md:col-span-2">
+            <DetailCard
+              label="Topics to avoid"
+              value={profile.avoidTopics.length ? getAvoidSelectionLabels(profile.avoidTopics).join(', ') : 'None selected'}
+            />
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2">
-          <DetailCard label="Route" value={`${profile.originCountry || 'Unknown origin'} → ${profile.destinationCountry || 'Unknown destination'}`} />
-          <DetailCard label="Language comfort" value={profile.languageLevel ? LANGUAGE_LEVEL_LABELS[profile.languageLevel] : 'Not set'} />
-          <DetailCard label="Learning style" value={profile.preferredLearningStyle ? LEARNING_STYLE_LABELS[profile.preferredLearningStyle] : 'Not set'} />
-          <DetailCard label="Saved notes" value={`${profile.savedJobIds.length} favorited`} />
-          <DetailCard label="Priority topics" value={profile.priorityTopics.length ? getSelectedLabels(profile.priorityTopics).join(', ') : 'None yet'} />
-          <DetailCard label="Daily-life support" value={profile.wantsHelpWith.length ? getHelpSelectionLabels(profile.wantsHelpWith).join(', ') : 'None yet'} />
-          <DetailCard label="Avoid topics" value={profile.avoidTopics.length ? getAvoidSelectionLabels(profile.avoidTopics).join(', ') : 'None'} />
-        </section>
-
-        <section className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--sandy-brown)] md:p-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">Account actions</p>
-          <h2 className="mt-2 text-2xl font-black md:text-3xl">Reset this demo device</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 opacity-80 md:text-base">
-            This removes your local user id and sends you back through onboarding. Server-side profile data remains tied to that generated user id unless replaced later.
+        {/* Account actions */}
+        <section className="rounded-[1.75rem] border border-[var(--border-faint)] bg-[var(--surface-card)] p-5 md:p-7">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">Account</p>
+          <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--regal-navy)] md:text-3xl">Reset this device</h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--text-muted)] md:text-base md:leading-7">
+            Removes your local user ID and sends you back through onboarding. Server-side data tied to that user ID is not deleted.
           </p>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             <button
@@ -104,20 +164,24 @@ export function ProfileScreen() {
                 window.localStorage.removeItem(LOCAL_USER_ID_KEY);
                 router.replace('/onboarding');
               }}
-              className="w-full rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-3 font-bold sm:w-auto"
+              className="inline-flex items-center justify-center rounded-xl border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-2.5 text-sm font-semibold text-[var(--regal-navy)] transition-all hover:bg-[var(--sandy-brown)] hover:text-white active:scale-[0.98] sm:w-auto"
             >
               Reset onboarding
             </button>
           </div>
 
-          <div className="mt-4 rounded-[1.25rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">Experimental tools</div>
-            <p className="mt-2 text-sm leading-6 opacity-80">Hidden here so the main app stays clean.</p>
-            <Link href="/experimental" className="mt-3 inline-flex rounded-full border-2 border-[var(--regal-navy)] bg-white px-4 py-2 text-sm font-bold">
-              Open experimental area
+          <div className="mt-5 rounded-2xl border border-dashed border-[var(--border-soft)] bg-[var(--surface-sunken)] p-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">Experimental</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">Hidden here so the main app stays clean.</p>
+            <Link
+              href="/experimental"
+              className="mt-3 inline-flex rounded-xl border border-[var(--border-soft)] bg-[var(--surface-card)] px-4 py-2 text-sm font-semibold text-[var(--regal-navy)] transition-all hover:border-[var(--regal-navy)] hover:bg-[var(--lemon-chiffon)]"
+            >
+              Open experimental area →
             </Link>
           </div>
         </section>
+
       </div>
     </main>
   );

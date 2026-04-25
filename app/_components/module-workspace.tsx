@@ -36,12 +36,33 @@ function parseEventData(event: Event) {
   };
 }
 
-function statusTone(status: LocalModuleStage['status']) {
-  if (status === 'completed') return 'bg-[var(--royal-gold)] text-[var(--regal-navy)]';
-  if (status === 'failed') return 'bg-[var(--tomato)] text-white';
-  if (status === 'generating') return 'bg-[var(--sandy-brown)] text-[var(--regal-navy)]';
-  if (status === 'queued') return 'bg-white text-[var(--regal-navy)]';
-  return 'bg-[var(--lemon-chiffon)] text-[var(--regal-navy)]';
+function StatusBadge({ status }: { status: LocalModuleStage['status'] }) {
+  const styles: Record<string, string> = {
+    completed: 'bg-[var(--royal-gold)] text-[var(--regal-navy)] border-[var(--regal-navy)]',
+    failed: 'bg-[var(--tomato)]/12 text-[var(--tomato)] border-[var(--tomato)]/30',
+    generating: 'bg-[var(--sandy-brown)]/12 text-[var(--sandy-brown)] border-[var(--sandy-brown)]/30',
+    queued: 'bg-[var(--lemon-chiffon)] text-[var(--regal-navy)] border-[var(--border-soft)]',
+    blank: 'bg-[var(--lemon-chiffon)] text-[var(--text-muted)] border-[var(--border-faint)]',
+  };
+  const labels: Record<string, string> = {
+    completed: 'Completed',
+    failed: 'Failed',
+    generating: 'Generating',
+    queued: 'Queued',
+    blank: 'Empty',
+  };
+  const tone = styles[status] ?? styles.blank;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${tone}`}
+    >
+      {status === 'generating' && (
+        <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-[var(--sandy-brown)]" />
+      )}
+      {labels[status] ?? status}
+    </span>
+  );
 }
 
 function isRootStage(stage: LocalModuleStage) {
@@ -78,28 +99,27 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
     const byId = new Map(workspace.stages.map((stage) => [stage.id, stage]));
     const path: LocalModuleStage[] = [];
     let cursor: LocalModuleStage | undefined = activeStage;
-
     while (cursor) {
-      if (!isRootStage(cursor)) {
-        path.push(cursor);
-      }
+      if (!isRootStage(cursor)) path.push(cursor);
       cursor = cursor.parentStageId ? byId.get(cursor.parentStageId) : undefined;
     }
-
     return path;
   }, [activeStage, workspace.stages]);
 
   const rootPath = getModuleStagePath(topic);
-  const getStageDepth = useCallback((stage: LocalModuleStage) => {
-    let depth = 0;
-    let cursor: LocalModuleStage | undefined = stage;
-    const byId = new Map(workspace.stages.map((entry) => [entry.id, entry]));
-    while (cursor?.parentStageId) {
-      depth += 1;
-      cursor = byId.get(cursor.parentStageId);
-    }
-    return depth;
-  }, [workspace.stages]);
+  const getStageDepth = useCallback(
+    (stage: LocalModuleStage) => {
+      let depth = 0;
+      let cursor: LocalModuleStage | undefined = stage;
+      const byId = new Map(workspace.stages.map((entry) => [entry.id, entry]));
+      while (cursor?.parentStageId) {
+        depth += 1;
+        cursor = byId.get(cursor.parentStageId);
+      }
+      return depth;
+    },
+    [workspace.stages],
+  );
 
   const currentDepth = useMemo(() => getStageDepth(activeStage), [activeStage, getStageDepth]);
 
@@ -119,7 +139,6 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
   const requestDeepDiveSuggestion = useCallback(
     async (selectedText: string, contextText: string) => {
       if (!profile) return null;
-
       try {
         const response = await fetch('/api/chat/suggestions', {
           method: 'POST',
@@ -127,7 +146,8 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
           body: JSON.stringify({
             question: `Create the next note for this exact selected phrase inside ${TOPIC_LABELS[topic]}.`,
             contextText: `Selected passage:\n${selectedText}\n\nParent note:\n${contextText}`,
-            feedback: 'Focus aggressively on the selected phrase. Use the parent note only for orientation. Do not re-explain the whole parent topic.',
+            feedback:
+              'Focus aggressively on the selected phrase. Use the parent note only for orientation. Do not re-explain the whole parent topic.',
             profile,
           }),
         });
@@ -144,7 +164,6 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
   const attachToJob = useCallback(
     async (stageId: string, jobId: string, fallbackTitle: string) => {
       if (attachedJobIdRef.current === jobId) return;
-
       attachedJobIdRef.current = jobId;
       sourceRef.current?.close();
       setBusy(true);
@@ -165,11 +184,7 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
 
       source.addEventListener('partial', (event) => {
         const payload = parseEventData(event);
-        patchStageAndPersist(stageId, {
-          jobId,
-          status: 'generating',
-          text: payload.partialText || '',
-        });
+        patchStageAndPersist(stageId, { jobId, status: 'generating', text: payload.partialText || '' });
       });
 
       source.addEventListener('completed', (event) => {
@@ -188,11 +203,7 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
 
       source.addEventListener('failed', (event) => {
         const payload = parseEventData(event);
-        patchStageAndPersist(stageId, {
-          jobId,
-          status: 'failed',
-          error: payload.error || 'Generation failed.',
-        });
+        patchStageAndPersist(stageId, { jobId, status: 'failed', error: payload.error || 'Generation failed.' });
         attachedJobIdRef.current = null;
         setBusy(false);
         source.close();
@@ -237,12 +248,7 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
         .filter(Boolean)
         .join('\n\n');
 
-      patchStageAndPersist(stageId, {
-        title,
-        seedText: pending.selectedText,
-        status: 'queued',
-        error: undefined,
-      });
+      patchStageAndPersist(stageId, { title, seedText: pending.selectedText, status: 'queued', error: undefined });
 
       try {
         const response = await fetch('/api/modules/generate', {
@@ -260,11 +266,7 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Failed to start module generation.');
 
-        patchStageAndPersist(stageId, {
-          jobId: data.jobId,
-          status: 'queued',
-          title,
-        });
+        patchStageAndPersist(stageId, { jobId: data.jobId, status: 'queued', title });
         await attachToJob(stageId, data.jobId, title);
       } catch (error) {
         patchStageAndPersist(stageId, {
@@ -284,7 +286,6 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
       requestedStageId && next.stages.some((stage) => stage.id === requestedStageId)
         ? { ...next, activeStageId: requestedStageId }
         : next;
-
     queueMicrotask(() => {
       setWorkspace(resolved);
       saveWorkspace(resolved);
@@ -297,7 +298,6 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
       router.replace('/onboarding');
       return;
     }
-
     fetch(`/api/profile/${encodeURIComponent(storedUserId)}`, { cache: 'no-store' })
       .then(async (response) => {
         const data = await response.json();
@@ -322,17 +322,13 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
 
     const pending = readPendingBranchRequest(initialStageId);
     if (pending && !activeStage.jobId) {
-      queueMicrotask(() => {
-        void startGenerationForStage(initialStageId);
-      });
+      queueMicrotask(() => { void startGenerationForStage(initialStageId); });
       return;
     }
-
     if (activeStage.jobId && (activeStage.status === 'queued' || activeStage.status === 'generating')) {
       void attachToJob(activeStage.id, activeStage.jobId, activeStage.title);
       return;
     }
-
     if (activeStage.jobId && activeStage.status === 'completed' && !activeStage.text.trim()) {
       queueMicrotask(async () => {
         const fallback = await fetch(`/api/modules/generate/${activeStage.jobId}`, { cache: 'no-store' })
@@ -349,34 +345,33 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
       });
       return;
     }
-
-    queueMicrotask(() => {
-      setBusy(false);
-    });
+    queueMicrotask(() => { setBusy(false); });
   }, [activeStage, attachToJob, initialStageId, patchStageAndPersist, profile, startGenerationForStage]);
 
-  const openBranchPage = useCallback((selectedText: string, preferredTitle?: string) => {
-    if (!activeStage || !selectedText.trim()) return;
+  const openBranchPage = useCallback(
+    (selectedText: string, preferredTitle?: string) => {
+      if (!activeStage || !selectedText.trim()) return;
+      const title = preferredTitle || inferTitle(selectedText, activeStage.title || TOPIC_LABELS[topic]);
+      const base = trimWorkspaceToStage(workspace, activeStage.id);
+      const stage = createQueuedStage(topic, title, selectedText, undefined, activeStage.id);
+      const next = upsertWorkspaceStage(base, stage);
 
-    const title = preferredTitle || inferTitle(selectedText, activeStage.title || TOPIC_LABELS[topic]);
-    const base = trimWorkspaceToStage(workspace, activeStage.id);
-    const stage = createQueuedStage(topic, title, selectedText, undefined, activeStage.id);
-    const next = upsertWorkspaceStage(base, stage);
+      queuePendingBranchRequest({
+        topic,
+        stageId: stage.id,
+        source: 'stage',
+        title,
+        selectedText,
+        contextText: activeStage.text,
+        createdAt: stage.createdAt,
+      });
 
-    queuePendingBranchRequest({
-      topic,
-      stageId: stage.id,
-      source: 'stage',
-      title,
-      selectedText,
-      contextText: activeStage.text,
-      createdAt: stage.createdAt,
-    });
-
-    setWorkspaceAndPersist(next);
-    window.getSelection()?.removeAllRanges();
-    router.push(getModuleStagePath(topic, stage.id));
-  }, [activeStage, router, setWorkspaceAndPersist, topic, workspace]);
+      setWorkspaceAndPersist(next);
+      window.getSelection()?.removeAllRanges();
+      router.push(getModuleStagePath(topic, stage.id));
+    },
+    [activeStage, router, setWorkspaceAndPersist, topic, workspace],
+  );
 
   const handleArticleSelection = useCallback(() => {
     const selection = window.getSelection();
@@ -410,16 +405,14 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
     router.push(isRootStage(stage) ? rootPath : getModuleStagePath(topic, stage.id));
   }
 
-  if (!isTopic(topic)) {
-    return null;
-  }
+  if (!isTopic(topic)) return null;
 
   if (loadingProfile || !profile || !activeStage) {
     return (
-      <main className="min-h-screen bg-[var(--lemon-chiffon)] px-4 py-8 text-[var(--regal-navy)]">
-        <div className="mx-auto max-w-4xl rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-6 shadow-[8px_8px_0_var(--royal-gold)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">Loading note</p>
-          <h1 className="mt-3 text-3xl font-black">Preparing your module page</h1>
+      <main className="min-h-screen bg-[var(--background)] px-4 py-8 text-[var(--foreground)]">
+        <div className="mx-auto max-w-4xl space-y-4">
+          <div className="animate-shimmer h-36 rounded-[1.75rem]" />
+          <div className="animate-shimmer h-64 rounded-[1.75rem]" />
         </div>
       </main>
     );
@@ -427,194 +420,282 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
 
   return (
     <>
-      <main className="min-h-screen bg-[var(--lemon-chiffon)] px-3 py-4 text-[var(--regal-navy)] md:px-6 md:py-8">
-        <div className="mx-auto max-w-5xl space-y-4 md:space-y-6">
-          <section className="overflow-hidden rounded-[1.85rem] border-4 border-[var(--regal-navy)] bg-white shadow-[10px_10px_0_var(--royal-gold)]">
-            <div className="bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_58%,#f4d35e_100%)] px-4 py-5 text-white md:px-6 md:py-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="max-w-2xl">
-                  <Link href="/" className="text-sm font-semibold uppercase tracking-[0.25em] text-white/82">
-                    ← Back to shelves
-                  </Link>
-                  <h1 className="mt-3 text-3xl font-black leading-tight md:text-4xl">{TOPIC_LABELS[topic]}</h1>
-                  <p className="mt-3 max-w-2xl text-sm leading-6 text-white/88 md:text-base md:leading-7">
-                    This page stays focused on one note. Select any useful phrase inside it and the next page starts generating immediately.
-                  </p>
-                </div>
-                <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+      {/* Sticky top bar */}
+      <header className="sticky top-0 z-40 border-b border-[var(--border-faint)] bg-[var(--background)]/90 px-4 backdrop-blur-md md:px-6">
+        <div className="mx-auto flex h-14 max-w-4xl items-center justify-between gap-4">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-2 text-sm">
+            <Link
+              href="/"
+              className="font-semibold text-[var(--sandy-brown)] transition hover:text-[var(--regal-navy)]"
+            >
+              Amparo
+            </Link>
+            <span className="text-[var(--text-muted)]">/</span>
+            <span className="font-semibold text-[var(--regal-navy)]">{TOPIC_LABELS[topic]}</span>
+          </nav>
+
+          {/* Right actions */}
+          <div className="flex items-center gap-2">
+            <span
+              className={`hidden rounded-full border px-3 py-1 text-xs font-semibold sm:inline-flex ${
+                busy
+                  ? 'border-[var(--sandy-brown)]/30 bg-[var(--sandy-brown)]/10 text-[var(--sandy-brown)]'
+                  : 'border-[var(--border-faint)] bg-[var(--lemon-chiffon)] text-[var(--regal-navy)]'
+              }`}
+            >
+              {busy ? (
+                <span className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-[var(--sandy-brown)]" />
+                  Generating
+                </span>
+              ) : (
+                `Depth ${currentDepth}`
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => setHistoryOpen(true)}
+              className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-card)] px-3 py-1.5 text-xs font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--lemon-chiffon)] hover:border-[var(--regal-navy)]"
+            >
+              History
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="min-h-screen bg-[var(--background)] px-4 py-8 text-[var(--foreground)] md:px-6 md:py-10">
+        <div className="mx-auto max-w-4xl space-y-5 animate-fade-in">
+
+          {/* Topic header card */}
+          <section className="rounded-[1.75rem] border-2 border-[var(--regal-navy)] bg-[linear-gradient(135deg,#6b2009_0%,#b33a0c_55%,#e98c3f_100%)] p-6 text-white shadow-[6px_6px_0_var(--royal-gold)] md:p-7">
+            <h1 className="font-serif text-4xl font-light leading-snug md:text-5xl">{TOPIC_LABELS[topic]}</h1>
+            <p className="mt-3 max-w-xl text-sm leading-7 text-white/75 md:text-base md:leading-8">
+              Select any phrase inside a note to branch into a sharper, tighter follow-up page.
+            </p>
+          </section>
+
+          {/* Note card */}
+          <section className="overflow-hidden rounded-[1.75rem] border border-[var(--border-faint)] bg-[var(--surface-card)] shadow-sm">
+            {/* Note header */}
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border-faint)] px-5 py-5 md:px-6">
+              <div className="max-w-xl">
+                <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">Current note</p>
+                <h2 className="mt-2 font-serif text-2xl font-medium leading-snug text-[var(--regal-navy)] md:text-3xl">
+                  {activeStage.title || TOPIC_LABELS[topic]}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">
+                  {isRootStage(activeStage)
+                    ? 'Use the chat agent or open a saved note. Once inside, selecting text jumps straight into a focused follow-up.'
+                    : 'Highlight any phrase to generate a deeper note focused on exactly that.'}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge status={activeStage.status} />
+                {activeStage.status === 'completed' && activeStage.jobId ? (
                   <button
                     type="button"
-                    onClick={() => setHistoryOpen(true)}
-                    className="rounded-full border-2 border-white/80 bg-white/14 px-4 py-2 text-sm font-bold text-white backdrop-blur-sm"
+                    onClick={() => void toggleFavorite()}
+                    disabled={favoriteBusy}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all disabled:opacity-60 ${
+                      activeStage.favorited
+                        ? 'border-[var(--regal-navy)] bg-[var(--royal-gold)] text-[var(--regal-navy)]'
+                        : 'border-[var(--border-soft)] bg-[var(--surface-card)] text-[var(--regal-navy)] hover:border-[var(--regal-navy)] hover:bg-[var(--lemon-chiffon)]'
+                    }`}
                   >
-                    History
+                    {favoriteBusy ? (
+                      <span className="animate-spin-slow h-3 w-3 rounded-full border border-current border-t-transparent" />
+                    ) : activeStage.favorited ? (
+                      '★ Saved'
+                    ) : (
+                      '☆ Save note'
+                    )}
                   </button>
-                  <div className="rounded-full border-2 border-white/80 bg-white/14 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm">
-                    {busy ? 'Generating now' : `Depth ${currentDepth}`}
-                  </div>
-                </div>
+                ) : null}
               </div>
             </div>
 
-            <div className="space-y-4 px-4 py-4 md:px-6 md:py-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="max-w-2xl">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--sandy-brown)] md:text-sm">Current note</p>
-                  <h2 className="mt-2 text-2xl font-black md:text-3xl">{activeStage.title}</h2>
-                  <p className="mt-3 text-sm leading-6 opacity-80 md:text-base">
-                    {isRootStage(activeStage)
-                      ? 'Use the chat agent from home or open a saved note. Once you are inside a note, selecting text will jump straight into a sharper follow-up page.'
-                      : 'Select the exact phrase you want unpacked. We will keep only enough parent context to orient the next note.'}
-                  </p>
-                </div>
-                <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
-                  <div className={`rounded-full border-2 border-[var(--regal-navy)] px-4 py-2 text-sm font-bold uppercase tracking-[0.16em] ${statusTone(activeStage.status)}`}>
-                    {activeStage.status}
-                  </div>
-                  {activeStage.status === 'completed' && activeStage.jobId ? (
-                    <button
-                      type="button"
-                      onClick={() => void toggleFavorite()}
-                      disabled={favoriteBusy}
-                      className="rounded-full border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] px-4 py-2 text-sm font-bold"
-                    >
-                      {favoriteBusy ? 'Saving…' : activeStage.favorited ? 'Remove favorite' : 'Save note'}
-                    </button>
-                  ) : null}
-                </div>
+            {/* Error */}
+            {activeStage.error ? (
+              <div className="mx-5 my-4 rounded-2xl border border-[var(--tomato)]/25 bg-[var(--tomato)]/8 px-4 py-3 text-sm text-[var(--tomato)] md:mx-6">
+                {activeStage.error}
               </div>
+            ) : null}
 
-              {activeStage.error ? (
-                <p className="rounded-[1.2rem] border-2 border-[var(--tomato)] bg-white px-4 py-3 text-[var(--tomato)]">
-                  {activeStage.error}
-                </p>
-              ) : null}
-
-              <div
-                ref={articleRef}
-                onMouseUp={handleArticleSelection}
-                onTouchEnd={handleArticleSelection}
-                className="rounded-[1.4rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-3 md:p-4"
-              >
-                {isRootStage(activeStage) ? (
-                  <div className="space-y-3 text-sm leading-7 opacity-80 md:text-base">
-                    <p>There is no note here yet.</p>
-                    <p>Go back to the essentials picker or your favorites, and start a focused note page from there.</p>
-                  </div>
-                ) : activeStage.text ? (
+            {/* Article / content area */}
+            <div
+              ref={articleRef}
+              onMouseUp={handleArticleSelection}
+              onTouchEnd={handleArticleSelection}
+              className="px-5 py-5 md:px-6 md:py-6"
+            >
+              {isRootStage(activeStage) ? (
+                <div className="rounded-2xl border border-dashed border-[var(--border-soft)] bg-[var(--lemon-chiffon)]/50 p-6 text-center">
+                  <p className="text-sm leading-7 text-[var(--text-muted)]">
+                    No note here yet. Go back to the essentials picker or your saved notes to start a focused page.
+                  </p>
+                  <Link
+                    href="/"
+                    className="mt-4 inline-flex rounded-xl border border-[var(--border-soft)] bg-[var(--surface-card)] px-4 py-2 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--lemon-chiffon)]"
+                  >
+                    ← Back to shelves
+                  </Link>
+                </div>
+              ) : activeStage.text ? (
+                <div className="relative">
+                  {!isRootStage(activeStage) && activeStage.status === 'completed' && (
+                    <div className="mb-4 flex items-center gap-2 rounded-xl border border-dashed border-[var(--border-soft)] bg-[var(--lemon-chiffon)]/60 px-4 py-2.5 text-xs text-[var(--text-muted)]">
+                      <span className="text-[var(--sandy-brown)]">✦</span>
+                      Select any phrase in this note to generate a sharper follow-up
+                    </div>
+                  )}
                   <MarkdownRenderer content={activeStage.text} />
-                ) : (
-                  <div className="space-y-3 text-sm leading-7 opacity-80 md:text-base">
-                    <p>We’re generating this note now.</p>
-                    <p>As soon as text arrives, you can select a phrase and branch even deeper.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {!isRootStage(activeStage) ? (
-              <section className="rounded-[1.4rem] border-2 border-[var(--regal-navy)] bg-white p-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--sandy-brown)] md:text-sm">Follow-up chat</p>
-                  <h3 className="mt-2 text-xl font-black md:text-2xl">Ask for the next angle</h3>
-                  <p className="mt-2 text-sm leading-6 opacity-80 md:text-base">
-                    Ask naturally. We’ll suggest three sharp follow-ups for this exact note, and clicking one starts the next module immediately.
-                  </p>
                 </div>
-                <form
-                  className="mt-4 space-y-4"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    if (!chatQuestion.trim() || !profile) return;
-                    setChatBusy(true);
-                    setChatError('');
-                    fetch('/api/chat/suggestions', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        question: chatQuestion,
-                        contextText: activeStage.text,
-                        feedback: 'Keep the module tightly focused on the selected follow-up angle and keep the title stable if chosen.',
-                        profile,
-                        previousSuggestions: chatSuggestions.map(({ title, topic }) => ({ title, topic })),
-                      }),
-                    })
-                      .then(async (response) => {
-                        const data = await response.json();
-                        if (!response.ok) throw new Error(data.error || 'Failed to fetch suggestions.');
-                        setChatSuggestions(data.suggestions || []);
-                      })
-                      .catch((error) => {
-                        setChatError(error instanceof Error ? error.message : 'Failed to fetch suggestions.');
-                      })
-                      .finally(() => setChatBusy(false));
-                  }}
-                >
-                  <textarea
-                    value={chatQuestion}
-                    onChange={(event) => setChatQuestion(event.target.value)}
-                    placeholder="Example: explain reloadable cards more practically for someone new to the city"
-                    className="min-h-[110px] w-full rounded-[1.2rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 text-sm leading-6 outline-none focus:border-[var(--sandy-brown)]"
-                  />
-                  {chatError ? <p className="rounded-[1.2rem] border-2 border-[var(--tomato)] bg-white px-4 py-3 text-[var(--tomato)]">{chatError}</p> : null}
-                  <button
-                    type="submit"
-                    disabled={chatBusy || !chatQuestion.trim()}
-                    className="rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-3 font-bold disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {chatBusy ? 'Thinking of follow-ups…' : 'Get follow-up suggestions'}
-                  </button>
-                </form>
+              ) : (
+                <div className="space-y-3 py-4">
+                  <div className="flex items-center gap-3 text-sm text-[var(--text-muted)]">
+                    <span className="h-4 w-4 animate-spin-slow rounded-full border-2 border-[var(--sandy-brown)] border-t-transparent" />
+                    Generating this note now…
+                  </div>
+                  <div className="animate-shimmer h-5 rounded-lg" />
+                  <div className="animate-shimmer h-5 w-5/6 rounded-lg delay-75" />
+                  <div className="animate-shimmer h-5 w-4/6 rounded-lg delay-150" />
+                  <div className="mt-6 animate-shimmer h-5 rounded-lg delay-225" />
+                  <div className="animate-shimmer h-5 w-3/4 rounded-lg delay-300" />
+                </div>
+              )}
+            </div>
+          </section>
 
+          {/* Follow-up chat section */}
+          {!isRootStage(activeStage) ? (
+            <section className="rounded-[1.75rem] border border-[var(--border-faint)] bg-[var(--surface-card)] p-5 shadow-sm md:p-6 animate-fade-in delay-150">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">Follow-up</p>
+              <h3 className="mt-2 font-serif text-xl font-medium text-[var(--regal-navy)] md:text-2xl">
+                Ask for the next angle
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--text-muted)] md:text-base">
+                Ask naturally. We'll suggest three focused follow-ups, and clicking one starts the next note immediately.
+              </p>
+
+              <form
+                className="mt-5 space-y-3"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (!chatQuestion.trim() || !profile) return;
+                  setChatBusy(true);
+                  setChatError('');
+                  fetch('/api/chat/suggestions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      question: chatQuestion,
+                      contextText: activeStage.text,
+                      feedback: 'Keep the module tightly focused on the selected follow-up angle.',
+                      profile,
+                      previousSuggestions: chatSuggestions.map(({ title, topic: t }) => ({ title, topic: t })),
+                    }),
+                  })
+                    .then(async (response) => {
+                      const data = await response.json();
+                      if (!response.ok) throw new Error(data.error || 'Failed to fetch suggestions.');
+                      setChatSuggestions(data.suggestions || []);
+                    })
+                    .catch((err) => {
+                      setChatError(err instanceof Error ? err.message : 'Failed to fetch suggestions.');
+                    })
+                    .finally(() => setChatBusy(false));
+                }}
+              >
+                <textarea
+                  value={chatQuestion}
+                  onChange={(event) => setChatQuestion(event.target.value)}
+                  placeholder="e.g. explain reloadable cards more practically for someone new to the city"
+                  className="min-h-[100px] w-full resize-none rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-sunken)] px-4 py-3 text-sm leading-6 text-[var(--foreground)] outline-none transition focus:border-[var(--sandy-brown)] focus:ring-2 focus:ring-[var(--sandy-brown)]/20 placeholder:text-[var(--text-muted)]"
+                />
+                {chatError ? (
+                  <p className="rounded-xl border border-[var(--tomato)]/30 bg-[var(--tomato)]/8 px-4 py-3 text-sm text-[var(--tomato)]">
+                    {chatError}
+                  </p>
+                ) : null}
+                <button
+                  type="submit"
+                  disabled={chatBusy || !chatQuestion.trim()}
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-2.5 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--sandy-brown)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+                >
+                  {chatBusy ? (
+                    <>
+                      <span className="animate-spin-slow h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent" />
+                      Thinking of follow-ups…
+                    </>
+                  ) : (
+                    'Get follow-up suggestions'
+                  )}
+                </button>
+              </form>
+
+              {chatSuggestions.length > 0 && (
                 <div className="mt-4 space-y-3">
                   {chatSuggestions.map((suggestion) => (
                     <button
                       key={suggestion.id}
                       type="button"
                       onClick={() => openBranchPage(suggestion.seedText, suggestion.title)}
-                      className="block w-full rounded-[1.2rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 text-left"
+                      className="group w-full rounded-2xl border border-[var(--border-faint)] bg-[var(--lemon-chiffon)]/50 p-4 text-left transition-all hover:border-[var(--border-soft)] hover:shadow-sm active:scale-[0.99]"
                     >
-                      <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">Suggested follow-up</div>
-                      <div className="mt-2 text-base font-black leading-6">{suggestion.title}</div>
-                      <div className="mt-2 text-sm leading-6 opacity-80">{suggestion.summary}</div>
+                      <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">
+                        Suggested follow-up
+                      </p>
+                      <p className="mt-2 font-serif text-base font-medium leading-snug text-[var(--regal-navy)] group-hover:underline group-hover:decoration-[var(--sandy-brown)] group-hover:underline-offset-2">
+                        {suggestion.title}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{suggestion.summary}</p>
                     </button>
                   ))}
                 </div>
-              </section>
-            ) : null}
-          </section>
+              )}
+            </section>
+          ) : null}
+
         </div>
       </main>
 
-      <PopupPanel open={historyOpen} onClose={() => setHistoryOpen(false)} eyebrow="History" title="Current path only">
+      {/* History popup */}
+      <PopupPanel open={historyOpen} onClose={() => setHistoryOpen(false)} eyebrow="History" title="Current note path">
         {historyStages.length === 0 ? (
-          <div className="rounded-[1.2rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 text-sm leading-6 opacity-80">
-            History is empty.
+          <div className="rounded-2xl border border-dashed border-[var(--border-soft)] bg-[var(--surface-sunken)] p-5 text-sm leading-6 text-[var(--text-muted)]">
+            No history yet.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {historyStages.map((stage) => {
-              const active = stage.id === activeStage.id;
+              const isActive = stage.id === activeStage.id;
               return (
                 <button
                   key={stage.id}
                   type="button"
                   onClick={() => openHistoryStage(stage)}
-                  className={`block w-full rounded-[1.35rem] border-2 p-4 text-left ${
-                    active ? 'border-[var(--regal-navy)] bg-[var(--royal-gold)]' : 'border-[var(--regal-navy)] bg-[var(--lemon-chiffon)]'
+                  className={`block w-full rounded-2xl border p-4 text-left transition-all hover:shadow-sm active:scale-[0.99] ${
+                    isActive
+                      ? 'border-[var(--regal-navy)] bg-[var(--royal-gold)] shadow-[3px_3px_0_var(--regal-navy)]'
+                      : 'border-[var(--border-faint)] bg-[var(--surface-card)] hover:border-[var(--border-soft)]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">Depth {getStageDepth(stage)}</div>
-                      <div className="mt-1 text-base font-black leading-6">{stage.title}</div>
-                      <div className="mt-1 text-sm leading-6 opacity-80">
-                        {stage.seedText ? `${stage.seedText.slice(0, 120)}${stage.seedText.length > 120 ? '…' : ''}` : 'Focused follow-up'}
-                      </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">
+                        Depth {getStageDepth(stage)}
+                      </p>
+                      <p className="mt-1 font-serif text-base font-medium leading-snug text-[var(--regal-navy)]">
+                        {stage.title}
+                      </p>
+                      {stage.seedText ? (
+                        <p className="mt-1.5 truncate text-sm text-[var(--text-muted)]">
+                          {stage.seedText.slice(0, 100)}{stage.seedText.length > 100 ? '…' : ''}
+                        </p>
+                      ) : null}
                     </div>
-                    <div className={`rounded-full border-2 border-[var(--regal-navy)] px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] ${statusTone(stage.status)}`}>
-                      {stage.status}
-                    </div>
+                    <StatusBadge status={stage.status} />
                   </div>
                 </button>
               );

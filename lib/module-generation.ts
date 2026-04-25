@@ -34,6 +34,8 @@ export async function ensureModuleGenerationStarted(jobId: string) {
   });
 }
 
+const STREAM_UPDATE_INTERVAL_MS = 120;
+
 export async function generateModuleForJob(jobId: string) {
   const job = await getJob(jobId);
   if (!job || job.status === 'generating' || job.status === 'completed' || job.status === 'failed') return;
@@ -41,16 +43,31 @@ export async function generateModuleForJob(jobId: string) {
   await updateJob(jobId, { status: 'generating', progress: 5 });
   const prompt = buildPrompt(job.input);
   let accumulated = '';
+  let lastEmittedMarkdown = '';
+  let lastEmitAt = 0;
+
+  const emitPartialUpdate = (force = false) => {
+    const normalized = normalizeMarkdown(accumulated);
+    const now = Date.now();
+    const shouldEmit = force || (normalized !== lastEmittedMarkdown && now - lastEmitAt >= STREAM_UPDATE_INTERVAL_MS);
+
+    if (!shouldEmit) return;
+
+    lastEmittedMarkdown = normalized;
+    lastEmitAt = now;
+    void updateJob(jobId, {
+      partialText: normalized,
+      progress: Math.min(90, 10 + Math.floor(normalized.length / 40)),
+    });
+  };
 
   try {
     const markdown = await streamMarkdownFromGroq(prompt, (chunk) => {
       accumulated += chunk;
-      void updateJob(jobId, {
-        status: 'generating',
-        partialText: normalizeMarkdown(accumulated),
-        progress: Math.min(90, 10 + Math.floor(normalizeMarkdown(accumulated).length / 40)),
-      });
+      emitPartialUpdate();
     });
+
+    emitPartialUpdate(true);
 
     const cleanMarkdown = normalizeMarkdown(markdown);
     const metadata = await getJsonFromGroq<MetadataResponse>(buildMetadataPrompt(cleanMarkdown)).catch(

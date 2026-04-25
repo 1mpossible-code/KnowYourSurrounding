@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 import { MarkdownRenderer } from '@/app/_components/markdown-renderer';
+import { StreamingMarkdownPreview } from '@/app/_components/streaming-markdown-preview';
 
 type JobSummary = {
   jobId: string;
@@ -180,7 +181,11 @@ export default function ModuleGenDevPage() {
           </form>
 
           <article className="mt-5 rounded-[1.5rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-5">
-            {renderedMarkdown ? <MarkdownRenderer content={renderedMarkdown} /> : <p>Your generated markdown will appear here.</p>}
+            {renderedMarkdown ? (
+              job.status === 'completed' ? <MarkdownRenderer content={renderedMarkdown} /> : <StreamingMarkdownPreview content={renderedMarkdown} />
+            ) : (
+              <p>Your generated markdown will appear here.</p>
+            )}
           </article>
         </section>
 

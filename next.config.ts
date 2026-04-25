@@ -6,6 +6,10 @@ const allowedDevOrigins = process.env.ALLOWED_DEV_ORIGINS
   ? process.env.ALLOWED_DEV_ORIGINS.split(",").map(s => s.trim()).filter(Boolean)
   : ["192.168.1.194"];
 
+module.exports = {
+  allowedDevOrigins: ['10.18.35.112'],
+}
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
   // only include this in development builds (harmless in production but keep scoped)

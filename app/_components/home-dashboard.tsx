@@ -98,62 +98,99 @@ type ModuleCard = {
   removableJobId: string;
 };
 
-function LoadingScreen({ message }: { message: string }) {
+function SkeletonScreen() {
   return (
-    <main className="min-h-screen bg-[var(--lemon-chiffon)] px-4 py-8 text-[var(--regal-navy)] md:px-6 md:py-10">
-      <div className="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center">
-        <div className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white px-6 py-8 text-center shadow-[10px_10px_0_var(--royal-gold)] md:rounded-[2rem] md:px-8 md:py-10 md:shadow-[12px_12px_0_var(--royal-gold)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--sandy-brown)]">Loading</p>
-          <h1 className="mt-3 text-3xl font-black">Preparing your space</h1>
-          <p className="mt-3 max-w-md text-base leading-7 md:text-lg md:leading-8">{message}</p>
+    <div className="min-h-screen bg-[var(--background)]">
+      {/* Header skeleton */}
+      <div className="border-b border-[var(--border-faint)] px-4 py-4 md:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
+          <div className="animate-shimmer h-6 w-24 rounded-lg" />
+          <div className="flex gap-2">
+            <div className="animate-shimmer h-8 w-28 rounded-xl" />
+            <div className="animate-shimmer h-8 w-20 rounded-xl" />
+          </div>
         </div>
       </div>
-    </main>
+      {/* Hero skeleton */}
+      <div className="px-4 py-8 md:px-6">
+        <div className="mx-auto max-w-7xl space-y-4">
+          <div className="animate-shimmer h-44 rounded-[1.75rem]" />
+          <div className="animate-shimmer h-10 w-48 rounded-lg delay-75" />
+          <div className="flex gap-4 overflow-hidden">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-shimmer h-[19rem] w-[18rem] shrink-0 rounded-[1.75rem]" style={{ animationDelay: `${i * 75}ms` }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-async function fetchJobs(jobIds: string[]) {
-  if (jobIds.length === 0) return [] as JobSummary[];
-  const query = encodeURIComponent(jobIds.join(','));
-  const response = await fetch(`/api/modules/generate/jobs?ids=${query}`, { cache: 'no-store' });
-  const data = (await response.json()) as { jobs?: JobSummary[]; error?: string };
-  if (!response.ok) throw new Error(data.error || 'Failed to load jobs.');
-  return data.jobs || [];
+function SuggestionCard({
+  eyebrow,
+  title,
+  summary,
+  onClick,
+}: {
+  eyebrow: string;
+  title: string;
+  summary: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group w-full rounded-2xl border border-[var(--border-faint)] bg-[var(--surface-card)] p-4 text-left transition-all hover:border-[var(--border-soft)] hover:shadow-sm active:scale-[0.99]"
+    >
+      <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">{eyebrow}</p>
+      <h3 className="mt-2 font-serif text-lg font-medium leading-snug text-[var(--regal-navy)] group-hover:underline group-hover:decoration-[var(--sandy-brown)] group-hover:underline-offset-2">
+        {title}
+      </h3>
+      <p className="mt-2 text-sm leading-6 text-[var(--text-muted)]">{summary}</p>
+    </button>
+  );
 }
 
 function FavoriteShelf({ topic, cards, onUnfollow }: { topic: CulturalTopic; cards: ModuleCard[]; onUnfollow: (jobId: string) => void }) {
   return (
-    <section className="space-y-3">
-      <h2 className="text-2xl font-black md:text-3xl">{TOPIC_LABELS[topic]}</h2>
-      <div className="-mx-3 flex gap-4 overflow-x-auto px-3 pb-1">
+    <section className="space-y-3 animate-fade-in">
+      <h2 className="font-serif text-2xl font-medium text-[var(--regal-navy)] md:text-3xl">{TOPIC_LABELS[topic]}</h2>
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 md:-mx-6 md:px-6">
         {cards.map((card) => (
           <article
             key={card.id}
-            className="relative h-[18.5rem] w-[18rem] shrink-0 overflow-hidden rounded-[1.8rem] border-4 border-[var(--regal-navy)] bg-white shadow-[8px_8px_0_var(--royal-gold)] md:h-[20rem] md:w-[19.5rem]"
+            className="relative h-[19rem] w-[17.5rem] shrink-0 overflow-hidden rounded-[1.75rem] border border-[var(--border-faint)] bg-[var(--surface-card)] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md md:w-[18.5rem]"
           >
+            {/* Overflow menu */}
             <details className="absolute right-3 top-3 z-10">
-              <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border-2 border-[var(--regal-navy)] bg-white text-lg font-black">•••</summary>
-              <div className="absolute right-0 mt-2 w-40 rounded-[1rem] border-2 border-[var(--regal-navy)] bg-white p-2 shadow-[4px_4px_0_var(--regal-navy)]">
+              <summary className="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full border border-white/30 bg-black/20 text-white backdrop-blur-sm transition hover:bg-black/35">
+                <span className="text-xs leading-none tracking-tight">•••</span>
+              </summary>
+              <div className="absolute right-0 mt-2 w-40 rounded-xl border border-[var(--border-faint)] bg-[var(--surface-card)] py-1 shadow-lg">
                 <button
                   type="button"
                   onClick={() => onUnfollow(card.removableJobId)}
-                  className="w-full rounded-[0.8rem] px-3 py-2 text-left text-sm font-bold hover:bg-[var(--lemon-chiffon)]"
+                  className="w-full px-4 py-2.5 text-left text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--lemon-chiffon)]"
                 >
-                  Unfollow note
+                  Remove from shelf
                 </button>
               </div>
             </details>
 
             <Link href={card.href} className="flex h-full flex-col">
-              <div className={`min-h-[11.75rem] flex-1 bg-gradient-to-br ${TOPIC_BACKGROUNDS[topic]} p-5 text-white`}>
-                <h3 className="mt-8 line-clamp-3 text-[1.85rem] font-black leading-[1.04]">{card.title}</h3>
-                <p className="mt-3 line-clamp-3 max-w-[13rem] text-sm leading-6 text-white/88">{card.subtitle}</p>
-              </div>
-              <div className="grid grid-cols-[1fr_auto] items-center gap-3 bg-[#2b1c14] px-5 py-4 text-white">
-                <div>
-                  <p className="text-3xl font-black leading-none">Open</p>
+              <div className={`min-h-[12.5rem] flex-1 bg-gradient-to-br ${TOPIC_BACKGROUNDS[topic]} p-5 text-white`}>
+                <div className="mt-1">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-white/70">{TOPIC_LABELS[topic]}</p>
+                  <h3 className="mt-3 line-clamp-3 font-serif text-[1.65rem] font-medium leading-[1.1] text-white">
+                    {card.title}
+                  </h3>
                 </div>
-                <div className="flex h-16 w-16 items-center justify-center rounded-full border-[6px] border-white/25 bg-[#1a110c] text-2xl">›</div>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-t border-white/10 bg-[var(--regal-navy)] px-5 py-3.5 text-white">
+                <span className="font-serif text-xl font-medium">Open note</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 text-sm">›</span>
               </div>
             </Link>
           </article>
@@ -163,7 +200,17 @@ function FavoriteShelf({ topic, cards, onUnfollow }: { topic: CulturalTopic; car
   );
 }
 
-function ChatAgentPopup({ open, onClose, profile, onPick }: { open: boolean; onClose: () => void; profile: ProfileResponse; onPick: (suggestion: ChatSuggestion) => void }) {
+function ChatAgentPopup({
+  open,
+  onClose,
+  profile,
+  onPick,
+}: {
+  open: boolean;
+  onClose: () => void;
+  profile: ProfileResponse;
+  onPick: (suggestion: ChatSuggestion) => void;
+}) {
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -178,13 +225,17 @@ function ChatAgentPopup({ open, onClose, profile, onPick }: { open: boolean; onC
       const response = await fetch('/api/chat/suggestions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, profile, previousSuggestions: suggestions.map(({ title, topic }) => ({ title, topic })) }),
+        body: JSON.stringify({
+          question,
+          profile,
+          previousSuggestions: suggestions.map(({ title, topic }) => ({ title, topic })),
+        }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to fetch suggestions.');
       setSuggestions(data.suggestions || []);
-    } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : 'Failed to fetch suggestions.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch suggestions.');
     } finally {
       setLoading(false);
     }
@@ -192,30 +243,48 @@ function ChatAgentPopup({ open, onClose, profile, onPick }: { open: boolean; onC
 
   return (
     <PopupPanel open={open} onClose={onClose} eyebrow="Chat agent" title="Ask once, start a new module thread">
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-3" onSubmit={handleSubmit}>
         <textarea
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder="Example: I keep sounding too direct in meetings and I want a better feel for polite disagreement."
-          className="min-h-[150px] w-full rounded-[1.4rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 text-sm leading-6 outline-none focus:border-[var(--sandy-brown)]"
+          placeholder="e.g. I keep sounding too direct in meetings and I want a better feel for polite disagreement."
+          className="min-h-[130px] w-full resize-none rounded-2xl border border-[var(--border-soft)] bg-[var(--surface-sunken)] px-4 py-3 text-sm leading-6 text-[var(--foreground)] outline-none transition focus:border-[var(--sandy-brown)] focus:ring-2 focus:ring-[var(--sandy-brown)]/20 placeholder:text-[var(--text-muted)]"
         />
-        {error ? <p className="rounded-[1.2rem] border-2 border-[var(--tomato)] bg-white px-4 py-3 text-[var(--tomato)]">{error}</p> : null}
-        <button type="submit" disabled={loading || !question.trim()} className="w-full rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-3 font-bold disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
-          {loading ? 'Finding suggestions…' : 'Get 3 suggestions'}
+        {error ? (
+          <p className="rounded-xl border border-[var(--tomato)]/30 bg-[var(--tomato)]/8 px-4 py-3 text-sm text-[var(--tomato)]">
+            {error}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={loading || !question.trim()}
+          className="inline-flex items-center gap-2 rounded-xl border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-2.5 text-sm font-semibold text-[var(--regal-navy)] transition-all hover:bg-[var(--sandy-brown)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]"
+        >
+          {loading ? (
+            <>
+              <span className="animate-spin-slow inline-block h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent" />
+              Finding suggestions…
+            </>
+          ) : (
+            'Get 3 suggestions'
+          )}
         </button>
       </form>
-      <div className="mt-5 grid gap-3">
+
+      <div className="mt-5 space-y-3">
         {suggestions.length === 0 ? (
-          <div className="rounded-[1.3rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 text-sm leading-6 opacity-80">
-            Ask one good question and pick a direction to immediately start a new module page.
+          <div className="rounded-2xl border border-dashed border-[var(--border-soft)] bg-[var(--surface-sunken)] p-5 text-sm leading-7 text-[var(--text-muted)]">
+            Ask one specific question and pick a direction — we'll start a fresh module page immediately.
           </div>
         ) : (
           suggestions.map((item) => (
-            <button key={item.id} type="button" onClick={() => onPick(item)} className="rounded-[1.3rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 text-left">
-              <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">{TOPIC_LABELS[item.topic]}</div>
-              <h3 className="mt-2 text-lg font-black leading-6">{item.title}</h3>
-              <p className="mt-2 text-sm leading-6 opacity-80">{item.summary}</p>
-            </button>
+            <SuggestionCard
+              key={item.id}
+              eyebrow={TOPIC_LABELS[item.topic]}
+              title={item.title}
+              summary={item.summary}
+              onClick={() => onPick(item)}
+            />
           ))
         )}
       </div>
@@ -223,16 +292,26 @@ function ChatAgentPopup({ open, onClose, profile, onPick }: { open: boolean; onC
   );
 }
 
-function EssentialsPopup({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (starter: (typeof ESSENTIAL_STARTERS)[number]) => void }) {
+function EssentialsPopup({
+  open,
+  onClose,
+  onPick,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onPick: (starter: (typeof ESSENTIAL_STARTERS)[number]) => void;
+}) {
   return (
     <PopupPanel open={open} onClose={onClose} eyebrow="Essential topics" title="Start with something useful right away">
       <div className="grid gap-3 md:grid-cols-2">
         {ESSENTIAL_STARTERS.map((starter) => (
-          <button key={`${starter.topic}-${starter.title}`} type="button" onClick={() => onPick(starter)} className="rounded-[1.3rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 text-left">
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">{TOPIC_LABELS[starter.topic]}</div>
-            <h3 className="mt-2 text-lg font-black leading-6">{starter.title}</h3>
-            <p className="mt-2 text-sm leading-6 opacity-80">{starter.summary}</p>
-          </button>
+          <SuggestionCard
+            key={`${starter.topic}-${starter.title}`}
+            eyebrow={TOPIC_LABELS[starter.topic]}
+            title={starter.title}
+            summary={starter.summary}
+            onClick={() => onPick(starter)}
+          />
         ))}
       </div>
     </PopupPanel>
@@ -265,6 +344,15 @@ function syncJobsIntoWorkspaces(jobs: JobSummary[], profile: ProfileResponse) {
   });
 }
 
+async function fetchJobs(jobIds: string[]) {
+  if (jobIds.length === 0) return [] as JobSummary[];
+  const query = encodeURIComponent(jobIds.join(','));
+  const response = await fetch(`/api/modules/generate/jobs?ids=${query}`, { cache: 'no-store' });
+  const data = (await response.json()) as { jobs?: JobSummary[]; error?: string };
+  if (!response.ok) throw new Error(data.error || 'Failed to load jobs.');
+  return data.jobs || [];
+}
+
 export function HomeDashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -273,7 +361,9 @@ export function HomeDashboard() {
   const [essentialsOpen, setEssentialsOpen] = useState(false);
 
   const loadHomeData = useCallback(async (currentProfile: ProfileResponse) => {
-    const workspaceJobIds = readStoredWorkspaces().flatMap((workspace) => workspace.stages.map((stage) => stage.jobId).filter(Boolean) as string[]);
+    const workspaceJobIds = readStoredWorkspaces().flatMap((workspace) =>
+      workspace.stages.map((stage) => stage.jobId).filter(Boolean) as string[],
+    );
     const jobIds = [...new Set([...currentProfile.savedJobIds, ...workspaceJobIds])];
     const jobs = await fetchJobs(jobIds);
 
@@ -288,21 +378,23 @@ export function HomeDashboard() {
     );
 
     const cards = new Map<CulturalTopic, ModuleCard[]>();
-    jobs.filter((job) => currentProfile.savedJobIds.includes(job.jobId) && job.module?.topic).forEach((job) => {
-      const topic = job.module?.topic as CulturalTopic;
-      const stageId = stageIdByJobId.get(job.jobId);
-      if (!stageId) return;
-      const list = cards.get(topic) ?? [];
-      list.push({
-        id: `favorite-${job.jobId}`,
-        topic,
-        title: job.module?.title || 'Saved note',
-        subtitle: 'Pinned so you can return fast.',
-        href: getModuleStagePath(topic, stageId),
-        removableJobId: job.jobId,
+    jobs
+      .filter((job) => currentProfile.savedJobIds.includes(job.jobId) && job.module?.topic)
+      .forEach((job) => {
+        const topic = job.module?.topic as CulturalTopic;
+        const stageId = stageIdByJobId.get(job.jobId);
+        if (!stageId) return;
+        const list = cards.get(topic) ?? [];
+        list.push({
+          id: `favorite-${job.jobId}`,
+          topic,
+          title: job.module?.title || 'Saved note',
+          subtitle: 'Pinned so you can return fast.',
+          href: getModuleStagePath(topic, stageId),
+          removableJobId: job.jobId,
+        });
+        cards.set(topic, list);
       });
-      cards.set(topic, list);
-    });
 
     setProfile(currentProfile);
     setCardsByTopic(
@@ -374,59 +466,137 @@ export function HomeDashboard() {
   const orderedTopics = useMemo(() => Object.keys(cardsByTopic) as CulturalTopic[], [cardsByTopic]);
 
   if (!profile) {
-    return <LoadingScreen message="Loading your saved modules." />;
+    return <SkeletonScreen />;
   }
 
   return (
     <>
-      <main className="min-h-screen bg-[var(--lemon-chiffon)] px-3 py-4 text-[var(--regal-navy)] md:px-6 md:py-8">
-        <div className="mx-auto max-w-7xl space-y-4 md:space-y-6">
-          <section className="rounded-[1.85rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[10px_10px_0_var(--royal-gold)] md:p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="max-w-2xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">Amparo</p>
-                <h1 className="mt-3 text-3xl font-black leading-tight md:text-5xl">Clean shelves, deeper notes only when you need them</h1>
-                <p className="mt-4 text-sm leading-6 opacity-80 md:text-base md:leading-7">
-                  Start from an essential topic or the chat agent. Only notes you explicitly save stay on the shelf.
-                </p>
-              </div>
-              <div className="flex w-full flex-col gap-3 sm:w-auto sm:min-w-[16rem]">
-                <button type="button" onClick={() => setEssentialsOpen(true)} className="rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-3 font-bold">
-                  Start essential topic
-                </button>
-                <button type="button" onClick={() => setChatOpen(true)} className="rounded-full border-2 border-[var(--regal-navy)] bg-white px-5 py-3 font-bold">
-                  Ask the chat agent
-                </button>
-                <Link href="/profile" className="rounded-full border-2 border-[var(--regal-navy)] bg-white px-5 py-3 text-center font-bold">
-                  Profile
-                </Link>
-              </div>
+      {/* Sticky top nav */}
+      <header className="sticky top-0 z-40 border-b border-[var(--border-faint)] bg-[var(--background)]/90 px-4 backdrop-blur-md md:px-6">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4">
+          <span className="font-serif text-xl font-medium text-[var(--regal-navy)]">Amparo</span>
+          <nav className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setEssentialsOpen(true)}
+              className="hidden rounded-xl border border-[var(--border-soft)] bg-[var(--surface-card)] px-4 py-1.5 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--lemon-chiffon)] hover:border-[var(--regal-navy)] sm:inline-flex"
+            >
+              Essential topics
+            </button>
+            <button
+              type="button"
+              onClick={() => setChatOpen(true)}
+              className="rounded-xl border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-4 py-1.5 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--sandy-brown)] hover:text-white"
+            >
+              Ask agent
+            </button>
+            <Link
+              href="/profile"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border-soft)] bg-[var(--lemon-chiffon)] text-xs font-bold text-[var(--regal-navy)] transition hover:border-[var(--regal-navy)]"
+              aria-label="Profile"
+              title={profile.name ? `Profile: ${profile.name}` : 'Profile'}
+            >
+              {profile.name ? profile.name[0].toUpperCase() : '↗'}
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+        <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10">
+
+          {/* Hero */}
+          <section className="rounded-[2rem] border-2 border-[var(--regal-navy)] bg-[var(--surface-card)] p-6 shadow-[8px_8px_0_var(--royal-gold)] animate-fade-in md:p-8">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">
+              {profile.name ? `Welcome back, ${profile.name}` : 'Your cultural guide'}
+            </p>
+            <h1 className="mt-3 font-serif text-4xl font-light leading-[1.1] text-[var(--regal-navy)] md:text-5xl lg:text-6xl">
+              Clean shelves,<br className="hidden sm:block" /> deeper notes when you need them.
+            </h1>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-[var(--text-muted)] md:text-base md:leading-8">
+              Start from an essential topic or the chat agent. Only notes you explicitly save stay on the shelf.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3 sm:hidden">
+              <button
+                type="button"
+                onClick={() => setEssentialsOpen(true)}
+                className="rounded-xl border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-2.5 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--sandy-brown)] hover:text-white"
+              >
+                Essential topics
+              </button>
+              <button
+                type="button"
+                onClick={() => setChatOpen(true)}
+                className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-card)] px-5 py-2.5 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--lemon-chiffon)] hover:border-[var(--regal-navy)]"
+              >
+                Ask agent
+              </button>
             </div>
           </section>
 
-          <section className="space-y-4">
-            <div className="rounded-[1.5rem] border-4 border-[var(--regal-navy)] bg-white px-4 py-4 shadow-[8px_8px_0_var(--royal-gold)] md:px-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--sandy-brown)] md:text-sm">Personal Favorites ✦</p>
-              <h2 className="mt-2 text-2xl font-black md:text-3xl">The notes worth keeping</h2>
+          {/* Favorites section */}
+          <section className="mt-10 space-y-8 animate-fade-in delay-150">
+            <div className="flex items-baseline justify-between gap-4 border-b border-[var(--border-faint)] pb-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[var(--sandy-brown)]">Personal shelf</p>
+                <h2 className="mt-1 font-serif text-2xl font-medium text-[var(--regal-navy)] md:text-3xl">
+                  The notes worth keeping
+                </h2>
+              </div>
+              <span className="shrink-0 rounded-full border border-[var(--border-faint)] bg-[var(--lemon-chiffon)] px-3 py-1 text-xs font-semibold text-[var(--regal-navy)]">
+                {orderedTopics.reduce((sum, t) => sum + (cardsByTopic[t]?.length ?? 0), 0)} saved
+              </span>
             </div>
 
             {orderedTopics.length === 0 ? (
-              <section className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--sandy-brown)] md:p-6">
-                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">No favorites yet</p>
-                <h2 className="mt-2 text-2xl font-black md:text-3xl">Start with one essential topic and save the notes you actually want back</h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 opacity-80 md:text-base">
-                  Your shelves stay intentionally small. Generate what you need, then save only the useful notes.
+              <div className="rounded-[1.75rem] border border-dashed border-[var(--border-soft)] bg-[var(--lemon-chiffon)]/50 px-6 py-12 text-center animate-fade-in">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] text-2xl">
+                  ✦
+                </div>
+                <h3 className="mt-4 font-serif text-xl font-medium text-[var(--regal-navy)]">Your shelf is empty</h3>
+                <p className="mt-2 mx-auto max-w-sm text-sm leading-7 text-[var(--text-muted)]">
+                  Start with an essential topic, generate a note, and save the ones actually worth keeping.
                 </p>
-              </section>
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEssentialsOpen(true)}
+                    className="rounded-xl border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-2.5 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--sandy-brown)] hover:text-white"
+                  >
+                    Browse essential topics
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChatOpen(true)}
+                    className="rounded-xl border border-[var(--border-soft)] bg-[var(--surface-card)] px-5 py-2.5 text-sm font-semibold text-[var(--regal-navy)] transition hover:bg-[var(--lemon-chiffon)]"
+                  >
+                    Ask the agent
+                  </button>
+                </div>
+              </div>
             ) : (
-              orderedTopics.map((topic) => <FavoriteShelf key={topic} topic={topic} cards={cardsByTopic[topic] || []} onUnfollow={handleUnfollow} />)
+              <div className="space-y-8">
+                {orderedTopics.map((topic) => (
+                  <FavoriteShelf key={topic} topic={topic} cards={cardsByTopic[topic] || []} onUnfollow={handleUnfollow} />
+                ))}
+              </div>
             )}
           </section>
+
         </div>
       </main>
 
-      <ChatAgentPopup open={chatOpen} onClose={() => setChatOpen(false)} profile={profile} onPick={(item) => startThread(item.topic, item.title, item.seedText, item.summary)} />
-      <EssentialsPopup open={essentialsOpen} onClose={() => setEssentialsOpen(false)} onPick={(starter) => startThread(starter.topic, starter.title, starter.seedText, starter.summary)} />
+      <ChatAgentPopup
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        profile={profile}
+        onPick={(item) => startThread(item.topic, item.title, item.seedText, item.summary)}
+      />
+      <EssentialsPopup
+        open={essentialsOpen}
+        onClose={() => setEssentialsOpen(false)}
+        onPick={(starter) => startThread(starter.topic, starter.title, starter.seedText, starter.summary)}
+      />
     </>
   );
 }
