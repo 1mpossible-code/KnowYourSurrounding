@@ -94,10 +94,10 @@ export function StarterGuidesPanel({
 
   if (entries.length === 0) {
     return (
-      <section className="rounded-[2.5rem] border-4 border-[var(--regal-navy)] bg-white p-6 shadow-[12px_12px_0_var(--sandy-brown)] md:p-8">
+      <section className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--sandy-brown)] md:rounded-[2.5rem] md:p-8 md:shadow-[12px_12px_0_var(--sandy-brown)]">
         <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">Starter guide</p>
         <h2 className="mt-2 text-3xl font-black md:text-4xl">Your first guide will appear here</h2>
-        <p className="mt-3 max-w-3xl text-lg leading-8">
+        <p className="mt-3 max-w-3xl text-base leading-7 md:text-lg md:leading-8">
           Once your profile creates a starter guide, this section will show its progress and the finished markdown.
         </p>
       </section>
@@ -107,12 +107,12 @@ export function StarterGuidesPanel({
   const showLoader = !allTerminal;
 
   return (
-    <section className="rounded-[2.5rem] border-4 border-[var(--regal-navy)] bg-white p-6 shadow-[12px_12px_0_var(--sandy-brown)] md:p-8">
+    <section className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--sandy-brown)] md:rounded-[2.5rem] md:p-8 md:shadow-[12px_12px_0_var(--sandy-brown)]">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">Your first guide</p>
           <h2 className="mt-2 text-3xl font-black md:text-4xl">We’re building your starter guide</h2>
-          <p className="mt-3 text-lg leading-8">
+          <p className="mt-3 text-base leading-7 md:text-lg md:leading-8">
             Based on the daily-life situations you asked for help with, we started one practical guide for {profile.destinationCountry || 'your destination'}.
           </p>
         </div>

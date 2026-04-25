@@ -65,32 +65,51 @@ const STEPS = [
 ] as const;
 
 function ProgressSidebar({ currentStep }: { currentStep: number }) {
+  const total = STEPS.length;
+  const current = STEPS[currentStep];
+  const next = STEPS[currentStep + 1];
+  const percent = ((currentStep + 1) / total) * 100;
+
   return (
-    <aside className="rounded-[2rem] border-4 border-[var(--regal-navy)] bg-white p-5 shadow-[10px_10px_0_var(--royal-gold)]">
-      <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">Setup progress</p>
-      <div className="mt-4 h-3 rounded-full bg-[var(--lemon-chiffon)]">
-        <div className="h-full rounded-full bg-[var(--royal-gold)] transition-all" style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }} />
+    <aside className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--royal-gold)] md:rounded-[2rem] md:p-5 md:shadow-[10px_10px_0_var(--royal-gold)] xl:sticky xl:top-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)] md:text-sm">Profile setup</p>
+          <p className="mt-2 text-2xl font-black leading-tight">Step {currentStep + 1}</p>
+        </div>
+        <div className="rounded-full border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] px-3 py-1 text-sm font-bold">
+          {currentStep + 1} / {total}
+        </div>
       </div>
-      <div className="mt-5 space-y-3">
-        {STEPS.map((step, index) => {
-          const state = index === currentStep ? 'current' : index < currentStep ? 'done' : 'upcoming';
-          return (
-            <div
-              key={step.title}
-              className={`rounded-[1.5rem] border-2 px-4 py-3 ${
-                state === 'current'
-                  ? 'border-[var(--regal-navy)] bg-[var(--lemon-chiffon)]'
-                  : state === 'done'
-                    ? 'border-[var(--sandy-brown)] bg-white'
-                    : 'border-transparent bg-[var(--lemon-chiffon)]/60'
-              }`}
-            >
-              <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--sandy-brown)]">Step {index + 1}</div>
-              <div className="mt-1 font-bold leading-6">{step.title}</div>
-            </div>
-          );
-        })}
+
+      <div
+        className="mt-4 h-3 rounded-full bg-[var(--lemon-chiffon)]"
+        role="progressbar"
+        aria-valuenow={currentStep + 1}
+        aria-valuemin={1}
+        aria-valuemax={total}
+        aria-label={`Onboarding step ${currentStep + 1} of ${total}`}
+      >
+        <div className="h-full rounded-full bg-[var(--royal-gold)] transition-all" style={{ width: `${percent}%` }} />
       </div>
+
+      <div className="mt-5 rounded-[1.5rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sandy-brown)]">Current focus</p>
+        <p className="mt-2 text-lg font-black leading-tight">{current.eyebrow}</p>
+        <p className="mt-2 text-sm leading-6 opacity-80">{current.title}</p>
+      </div>
+
+      {next ? (
+        <div className="mt-3 rounded-[1.5rem] border-2 border-dashed border-[var(--regal-navy)] bg-white p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sandy-brown)]">Up next</p>
+          <p className="mt-2 font-bold leading-6">{next.eyebrow}</p>
+          <p className="mt-1 text-sm leading-6 opacity-75">{next.title}</p>
+        </div>
+      ) : (
+        <div className="mt-3 rounded-[1.5rem] border-2 border-dashed border-[var(--regal-navy)] bg-white p-4 text-sm leading-6 opacity-80">
+          You’re at the final review. Once this looks right, we’ll save your profile and start your first guide.
+        </div>
+      )}
     </aside>
   );
 }
@@ -98,9 +117,11 @@ function ProgressSidebar({ currentStep }: { currentStep: number }) {
 function StepHeader({ step }: { step: (typeof STEPS)[number] }) {
   return (
     <div>
-      <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">{step.eyebrow}</p>
-      <h1 className="mt-2 text-4xl font-black leading-tight">{step.title}</h1>
-      <p className="mt-3 max-w-2xl text-lg leading-8">{step.description}</p>
+      <div className="inline-flex rounded-full border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--sandy-brown)] md:text-sm">
+        {step.eyebrow}
+      </div>
+      <h1 className="mt-4 text-3xl font-black leading-tight md:text-4xl">{step.title}</h1>
+      <p className="mt-3 max-w-2xl text-base leading-7 md:text-lg md:leading-8">{step.description}</p>
     </div>
   );
 }
@@ -116,7 +137,7 @@ function ChoiceCard({ selected, label, onClick }: { selected: boolean; label: st
           : 'border-[var(--regal-navy)] bg-white hover:bg-[var(--lemon-chiffon)]'
       }`}
     >
-      <span className="font-bold leading-6">{label}</span>
+      <span className="text-sm font-bold leading-6 md:text-base">{label}</span>
     </button>
   );
 }
@@ -402,9 +423,9 @@ export function OnboardingFlow() {
 
   if (checkingSession) {
     return (
-      <main className="min-h-screen bg-[var(--lemon-chiffon)] px-6 py-10 text-[var(--regal-navy)]">
+      <main className="min-h-screen bg-[var(--lemon-chiffon)] px-4 py-8 text-[var(--regal-navy)] md:px-6 md:py-10">
         <div className="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center">
-          <div className="rounded-[2rem] border-4 border-[var(--regal-navy)] bg-white px-8 py-10 text-center shadow-[12px_12px_0_var(--royal-gold)]">
+          <div className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white px-6 py-8 text-center shadow-[10px_10px_0_var(--royal-gold)] md:rounded-[2rem] md:px-8 md:py-10 md:shadow-[12px_12px_0_var(--royal-gold)]">
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--sandy-brown)]">Checking session</p>
             <h1 className="mt-3 text-3xl font-black">Preparing your onboarding flow</h1>
           </div>
@@ -414,11 +435,11 @@ export function OnboardingFlow() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--lemon-chiffon)] px-4 py-6 text-[var(--regal-navy)] md:px-6 md:py-8">
-      <div className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <main className="min-h-screen bg-[var(--lemon-chiffon)] px-3 py-4 text-[var(--regal-navy)] md:px-6 md:py-8">
+      <div className="mx-auto grid max-w-7xl gap-4 md:gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <ProgressSidebar currentStep={currentStep} />
 
-        <section className="rounded-[2rem] border-4 border-[var(--regal-navy)] bg-white p-6 shadow-[10px_10px_0_var(--sandy-brown)] md:p-8">
+        <section className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--sandy-brown)] md:rounded-[2rem] md:p-8 md:shadow-[10px_10px_0_var(--sandy-brown)]">
           <StepHeader step={step} />
           <div className="mt-8">{renderStep(currentStep, form, setForm)}</div>
 
@@ -429,12 +450,12 @@ export function OnboardingFlow() {
             </p>
           ) : null}
 
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t-2 border-dashed border-[var(--regal-navy)] pt-6">
+          <div className="mt-8 flex flex-col-reverse gap-3 border-t-2 border-dashed border-[var(--regal-navy)] pt-6 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
               onClick={handleBack}
               disabled={currentStep === 0 || submitting}
-              className="rounded-full border-2 border-[var(--regal-navy)] bg-white px-5 py-3 font-bold transition hover:bg-[var(--lemon-chiffon)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-full border-2 border-[var(--regal-navy)] bg-white px-5 py-3 font-bold transition hover:bg-[var(--lemon-chiffon)] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
             >
               Back
             </button>
@@ -444,7 +465,7 @@ export function OnboardingFlow() {
                 type="button"
                 onClick={() => void handleFinish()}
                 disabled={submitting}
-                className="rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-3 font-bold transition hover:bg-[var(--sandy-brown)] disabled:cursor-not-allowed disabled:opacity-70"
+                className="w-full rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-3 font-bold transition hover:bg-[var(--sandy-brown)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
               >
                 {submitting ? 'Creating your profile and first guides…' : 'Make my profile'}
               </button>
@@ -453,7 +474,7 @@ export function OnboardingFlow() {
                 type="button"
                 onClick={handleNext}
                 disabled={!canContinue}
-                className="rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-3 font-bold transition hover:bg-[var(--sandy-brown)] disabled:cursor-not-allowed disabled:opacity-70"
+                className="w-full rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-3 font-bold transition hover:bg-[var(--sandy-brown)] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
               >
                 Continue
               </button>

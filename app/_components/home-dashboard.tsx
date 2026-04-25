@@ -17,12 +17,12 @@ import { ProfileResponse } from '@/lib/profile-api';
 
 function LoadingScreen({ message }: { message: string }) {
   return (
-    <main className="min-h-screen bg-[var(--lemon-chiffon)] px-6 py-10 text-[var(--regal-navy)]">
+    <main className="min-h-screen bg-[var(--lemon-chiffon)] px-4 py-8 text-[var(--regal-navy)] md:px-6 md:py-10">
       <div className="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center">
-        <div className="rounded-[2rem] border-4 border-[var(--regal-navy)] bg-white px-8 py-10 text-center shadow-[12px_12px_0_var(--royal-gold)]">
+        <div className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white px-6 py-8 text-center shadow-[10px_10px_0_var(--royal-gold)] md:rounded-[2rem] md:px-8 md:py-10 md:shadow-[12px_12px_0_var(--royal-gold)]">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--sandy-brown)]">Loading</p>
           <h1 className="mt-3 text-3xl font-black">Preparing your space</h1>
-          <p className="mt-3 max-w-md text-lg leading-8">{message}</p>
+          <p className="mt-3 max-w-md text-base leading-7 md:text-lg md:leading-8">{message}</p>
         </div>
       </div>
     </main>
@@ -44,29 +44,29 @@ function TopicChip({ label }: { label: string }) {
 
 function ProfileSummary({ profile, onReset }: { profile: ProfileResponse; onReset: () => void }) {
   return (
-    <main className="min-h-screen bg-[var(--lemon-chiffon)] px-6 py-8 text-[var(--regal-navy)] md:py-10">
+    <main className="min-h-screen bg-[var(--lemon-chiffon)] px-3 py-4 text-[var(--regal-navy)] md:px-6 md:py-10">
       <div className="mx-auto max-w-6xl space-y-6">
-        <section className="rounded-[2.5rem] border-4 border-[var(--regal-navy)] bg-white p-6 shadow-[12px_12px_0_var(--royal-gold)] md:p-8">
+        <section className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--royal-gold)] md:rounded-[2.5rem] md:p-8 md:shadow-[12px_12px_0_var(--royal-gold)]">
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div className="max-w-2xl">
               <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[var(--sandy-brown)]">Home</p>
-              <h1 className="mt-3 text-4xl font-black md:text-5xl">
+              <h1 className="mt-3 text-3xl font-black leading-tight md:text-5xl">
                 Welcome{profile.name ? `, ${profile.name}` : ''}
               </h1>
-              <p className="mt-4 text-lg leading-8">
+              <p className="mt-4 text-base leading-7 md:text-lg md:leading-8">
                 Your cultural orientation profile is ready. This home view now knows where you are coming from,
                 where you are adapting to, and what kind of support feels most useful.
               </p>
             </div>
-            <div className="rounded-[1.75rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] px-5 py-4">
+            <div className="w-full rounded-[1.5rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] px-4 py-4 md:w-auto md:rounded-[1.75rem] md:px-5">
               <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--sandy-brown)]">Route</div>
-              <div className="mt-2 text-lg font-black">
+              <div className="mt-2 text-base font-black md:text-lg">
                 {profile.originCountry || 'Unknown origin'} → {profile.destinationCountry || 'Unknown destination'}
               </div>
             </div>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label="Language comfort"
               value={profile.languageLevel ? LANGUAGE_LEVEL_LABELS[profile.languageLevel] : 'Not set'}
@@ -82,10 +82,10 @@ function ProfileSummary({ profile, onReset }: { profile: ProfileResponse; onRese
 
         <StarterGuidesPanel profile={profile} />
 
-        <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <article className="rounded-[2rem] border-4 border-[var(--regal-navy)] bg-white p-6 shadow-[12px_12px_0_var(--sandy-brown)]">
+        <section className="grid gap-4 md:gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <article className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--sandy-brown)] md:rounded-[2rem] md:p-6 md:shadow-[12px_12px_0_var(--sandy-brown)]">
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">Focus areas</p>
-            <h2 className="mt-2 text-3xl font-black">What matters to you right now</h2>
+            <h2 className="mt-2 text-2xl font-black md:text-3xl">What matters to you right now</h2>
             <div className="mt-5 flex flex-wrap gap-3">
               {profile.priorityTopics.map((topic) => (
                 <TopicChip key={topic} label={TOPIC_LABELS[topic]} />
@@ -102,9 +102,9 @@ function ProfileSummary({ profile, onReset }: { profile: ProfileResponse; onRese
             ) : null}
           </article>
 
-          <article className="rounded-[2rem] border-4 border-[var(--regal-navy)] bg-white p-6 shadow-[12px_12px_0_var(--royal-gold)]">
+          <article className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--royal-gold)] md:rounded-[2rem] md:p-6 md:shadow-[12px_12px_0_var(--royal-gold)]">
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">Next step</p>
-            <h2 className="mt-2 text-3xl font-black">Ready for guided support</h2>
+            <h2 className="mt-2 text-2xl font-black md:text-3xl">Ready for guided support</h2>
             <p className="mt-4 leading-8">
               The onboarding flow is complete. You can now move into module generation, chatbot prompting, and
               favorites with this saved profile as context.
