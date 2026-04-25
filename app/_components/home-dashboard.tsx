@@ -4,7 +4,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { LOCAL_USER_ID_KEY, LEARNING_STYLE_LABELS, LANGUAGE_LEVEL_LABELS, TOPIC_LABELS } from '@/lib/onboarding';
+import {
+  getAvoidSelectionLabels,
+  getHelpSelectionLabels,
+  LOCAL_USER_ID_KEY,
+  LEARNING_STYLE_LABELS,
+  LANGUAGE_LEVEL_LABELS,
+  TOPIC_LABELS,
+} from '@/lib/onboarding';
 import { ProfileResponse } from '@/lib/profile-api';
 
 function LoadingScreen({ message }: { message: string }) {
@@ -83,11 +90,11 @@ function ProfileSummary({ profile, onReset }: { profile: ProfileResponse; onRese
             </div>
             <div className="mt-6 rounded-[1.5rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 leading-7">
               <strong>Help wanted:</strong>{' '}
-              {profile.wantsHelpWith.length > 0 ? profile.wantsHelpWith.join(', ') : 'No help topics chosen yet.'}
+              {profile.wantsHelpWith.length > 0 ? getHelpSelectionLabels(profile.wantsHelpWith).join(', ') : 'No daily-life areas chosen yet.'}
             </div>
             {profile.avoidTopics.length > 0 ? (
               <div className="mt-4 rounded-[1.5rem] border-2 border-[var(--tomato)] bg-white p-4 leading-7 text-[var(--tomato)]">
-                <strong>Avoid topics:</strong> {profile.avoidTopics.join(', ')}
+                <strong>Topics to steer clear of:</strong> {getAvoidSelectionLabels(profile.avoidTopics).join(', ')}
               </div>
             ) : null}
           </article>

@@ -5,6 +5,7 @@ import {
   normalizeMarkdown,
   validateInput,
   validateProfilePatch,
+  WANTS_HELP_SITUATIONS,
 } from '@/lib/cultural-orientation';
 
 describe('module generation helpers', () => {
@@ -48,7 +49,7 @@ describe('module generation helpers', () => {
       originCountry: 'Ukraine',
       destinationCountry: null,
       priorityTopics: ['work', 'communication'],
-      wantsHelpWith: ['meetings'],
+      wantsHelpWith: ['going_to_doctor', 'using_public_transit'],
       avoidTopics: null,
     });
 
@@ -56,7 +57,44 @@ describe('module generation helpers', () => {
     expect(patch.originCountry).toBe('Ukraine');
     expect(patch.destinationCountry).toBeNull();
     expect(patch.priorityTopics).toEqual(['work', 'communication']);
-    expect(patch.wantsHelpWith).toEqual(['meetings']);
+    expect(patch.wantsHelpWith).toEqual(['going_to_doctor', 'using_public_transit']);
     expect(patch.avoidTopics).toEqual([]);
+  });
+
+  test('validateProfilePatch rejects wantsHelpWith cultural topic slugs', () => {
+    expect(() =>
+      validateProfilePatch({
+        originCountry: 'Ukraine',
+        wantsHelpWith: ['greetings', 'work'],
+      }),
+    ).toThrow('wantsHelpWith contains invalid values.');
+  });
+
+  test('validateProfilePatch rejects avoidTopics outside sensitive set', () => {
+    expect(() =>
+      validateProfilePatch({
+        originCountry: 'Ukraine',
+        avoidTopics: ['laws'],
+      }),
+    ).toThrow('avoidTopics contains invalid values.');
+  });
+
+  test('validateProfilePatch accepts sensitive avoid slugs', () => {
+    const patch = validateProfilePatch({
+      avoidTopics: ['politics', 'trauma', 'legal_status'],
+    });
+    expect(patch.avoidTopics).toEqual(['politics', 'trauma', 'legal_status']);
+  });
+
+  test('validateProfilePatch accepts every valid_wants_help_with DB slug', () => {
+    const patch = validateProfilePatch({ wantsHelpWith: [...WANTS_HELP_SITUATIONS] });
+    expect(patch.wantsHelpWith).toEqual([...WANTS_HELP_SITUATIONS]);
+  });
+
+  test('validateProfilePatch trims wantsHelpWith entries', () => {
+    const patch = validateProfilePatch({
+      wantsHelpWith: ['  going_to_doctor  ', 'using_public_transit'],
+    });
+    expect(patch.wantsHelpWith).toEqual(['going_to_doctor', 'using_public_transit']);
   });
 });

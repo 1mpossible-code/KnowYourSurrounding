@@ -1,12 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 
+import { WANTS_HELP_SITUATIONS } from '@/lib/cultural-orientation';
 import { buildProfilePatchFromOnboarding, createInitialOnboardingForm, LOCAL_USER_ID_KEY } from '@/lib/onboarding';
 
 describe('onboarding helpers', () => {
-  test('createInitialOnboardingForm selects all default topic-based options', () => {
+  test('createInitialOnboardingForm selects all topics and all daily-life help areas', () => {
     const form = createInitialOnboardingForm();
     expect(form.priorityTopics.length).toBeGreaterThan(0);
-    expect(form.wantsHelpWith.length).toBe(form.priorityTopics.length);
+    expect(form.wantsHelpWith).toEqual([...WANTS_HELP_SITUATIONS]);
     expect(form.avoidTopics).toEqual([]);
     expect(form.name).toBe('');
   });
@@ -19,8 +20,8 @@ describe('onboarding helpers', () => {
       languageLevel: 'intermediate',
       priorityTopics: ['work', 'communication'],
       preferredLearningStyle: 'real_life_examples',
-      wantsHelpWith: ['work', 'communication'],
-      avoidTopics: ['dating'],
+      wantsHelpWith: ['going_to_doctor', 'using_public_transit'],
+      avoidTopics: ['dating', 'politics'],
     });
 
     expect(patch).toEqual({
@@ -30,8 +31,8 @@ describe('onboarding helpers', () => {
       languageLevel: 'intermediate',
       priorityTopics: ['work', 'communication'],
       preferredLearningStyle: 'real_life_examples',
-      wantsHelpWith: ['work', 'communication'],
-      avoidTopics: ['dating'],
+      wantsHelpWith: ['going_to_doctor', 'using_public_transit'],
+      avoidTopics: ['dating', 'politics'],
     });
   });
 

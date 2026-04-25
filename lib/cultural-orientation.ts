@@ -33,7 +33,37 @@ export const LEARNING_STYLES = [
 ] as const;
 export const JOB_STATUSES = ['queued', 'generating', 'completed', 'failed'] as const;
 
+/** Sensitive areas the user may ask to steer clear of (onboarding step 7 / `avoid_topics`). */
+export const SENSITIVE_AVOID_TOPICS = [
+  'religion',
+  'politics',
+  'gender',
+  'dating',
+  'legal_status',
+  'trauma',
+] as const;
+
+/**
+ * Daily-life situations for `wants_help_with` (not cultural topic slugs).
+ * Must stay in sync with Supabase check `valid_wants_help_with`.
+ */
+export const WANTS_HELP_SITUATIONS = [
+  'using_public_transit',
+  'shopping_for_food',
+  'going_to_doctor',
+  'talking_to_landlord',
+  'opening_bank_account',
+  'using_libraries',
+  'finding_community_events',
+  'school_parent_interactions',
+  'job_interviews',
+  'calling_emergency_services',
+  'understanding_local_laws',
+] as const;
+
 export type CulturalTopic = (typeof CULTURAL_TOPICS)[number];
+export type SensitiveAvoidTopic = (typeof SENSITIVE_AVOID_TOPICS)[number];
+export type WantsHelpSituation = (typeof WANTS_HELP_SITUATIONS)[number];
 export type LanguageLevel = (typeof LANGUAGE_LEVELS)[number];
 export type LearningStyle = (typeof LEARNING_STYLES)[number];
 export type JobStatus = (typeof JOB_STATUSES)[number];
@@ -93,6 +123,16 @@ function isStringArray(value: unknown): value is string[] {
 
 export function isTopic(value: string): value is CulturalTopic {
   return CULTURAL_TOPICS.includes(value as CulturalTopic);
+}
+
+export function isSensitiveAvoidTopic(value: string): value is SensitiveAvoidTopic {
+  const key = value.trim();
+  return SENSITIVE_AVOID_TOPICS.includes(key as SensitiveAvoidTopic);
+}
+
+export function isWantsHelpSituation(value: string): value is WantsHelpSituation {
+  const key = value.trim();
+  return WANTS_HELP_SITUATIONS.includes(key as WantsHelpSituation);
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -184,13 +224,21 @@ export function validateProfilePatch(payload: unknown): ProfilePatchInput {
     if (!isStringArray(data.wantsHelpWith) && data.wantsHelpWith !== null) {
       throw new Error('wantsHelpWith must be a string array or null.');
     }
-    patch.wantsHelpWith = data.wantsHelpWith === null ? [] : (data.wantsHelpWith as string[]);
+    const list = data.wantsHelpWith === null ? [] : (data.wantsHelpWith as string[]).map((s) => s.trim());
+    if (list.some((entry) => !entry || !isWantsHelpSituation(entry))) {
+      throw new Error('wantsHelpWith contains invalid values.');
+    }
+    patch.wantsHelpWith = list;
   }
   if ('avoidTopics' in data) {
     if (!isStringArray(data.avoidTopics) && data.avoidTopics !== null) {
       throw new Error('avoidTopics must be a string array or null.');
     }
-    patch.avoidTopics = data.avoidTopics === null ? [] : (data.avoidTopics as string[]);
+    const list = data.avoidTopics === null ? [] : (data.avoidTopics as string[]).map((s) => s.trim());
+    if (list.some((entry) => !entry || !isSensitiveAvoidTopic(entry))) {
+      throw new Error('avoidTopics contains invalid values.');
+    }
+    patch.avoidTopics = list;
   }
 
   if (Object.keys(patch).length === 0) {
@@ -215,13 +263,32 @@ function validateProfile(profile: Record<string, unknown>): ProfileInput {
     throw new Error('profile.priorityTopics contains invalid topics.');
   }
 
-  if (profile.wantsHelpWith && !isStringArray(profile.wantsHelpWith)) {
-    throw new Error('profile.wantsHelpWith must be a string array.');
+  if (profile.wantsHelpWith) {
+    if (!isStringArray(profile.wantsHelpWith)) {
+      throw new Error('profile.wantsHelpWith must be a string array.');
+    }
+    if (profile.wantsHelpWith.some((entry) => !isWantsHelpSituation(String(entry).trim()))) {
+      throw new Error('profile.wantsHelpWith contains invalid values.');
+    }
   }
 
-  if (profile.avoidTopics && !isStringArray(profile.avoidTopics)) {
-    throw new Error('profile.avoidTopics must be a string array.');
+  if (profile.avoidTopics) {
+    if (!isStringArray(profile.avoidTopics)) {
+      throw new Error('profile.avoidTopics must be a string array.');
+    }
+    if (profile.avoidTopics.some((entry) => !isSensitiveAvoidTopic(String(entry)))) {
+      throw new Error('profile.avoidTopics contains invalid values.');
+    }
   }
+
+  const wantsHelpNormalized =
+    profile.wantsHelpWith && isStringArray(profile.wantsHelpWith)
+      ? (profile.wantsHelpWith as string[]).map((s) => s.trim()).filter(Boolean)
+      : undefined;
+  const avoidTopicsNormalized =
+    profile.avoidTopics && isStringArray(profile.avoidTopics)
+      ? (profile.avoidTopics as string[]).map((s) => s.trim()).filter(Boolean)
+      : undefined;
 
   return {
     name: typeof profile.name === 'string' ? profile.name.trim() : undefined,
@@ -230,8 +297,8 @@ function validateProfile(profile: Record<string, unknown>): ProfileInput {
     languageLevel: languageLevel as LanguageLevel | undefined,
     preferredLearningStyle: preferredLearningStyle as LearningStyle | undefined,
     priorityTopics: priorityTopics as CulturalTopic[] | undefined,
-    wantsHelpWith: profile.wantsHelpWith as string[] | undefined,
-    avoidTopics: profile.avoidTopics as string[] | undefined,
+    wantsHelpWith: wantsHelpNormalized,
+    avoidTopics: avoidTopicsNormalized,
   };
 }
 

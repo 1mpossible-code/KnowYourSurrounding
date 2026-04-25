@@ -22,7 +22,8 @@ export type ProfileRow = {
   preferred_learning_style: LearningStyle | null;
   wants_help_with: string[] | null;
   avoid_topics: string[] | null;
-  saved_generation_job_ids: string[];
+  /** UUIDs of favorited completed generation jobs (Supabase column name). */
+  saved_modules: string[];
   created_at: string;
   updated_at: string;
 };
@@ -76,7 +77,7 @@ function rowToResponse(row: ProfileRow): ProfileResponse {
     preferredLearningStyle: row.preferred_learning_style,
     wantsHelpWith: row.wants_help_with ?? [],
     avoidTopics: row.avoid_topics ?? [],
-    savedJobIds: row.saved_generation_job_ids ?? [],
+    savedJobIds: row.saved_modules ?? [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -107,7 +108,7 @@ function toInsertBody(userId: string, profile: ProfileResponse) {
     preferred_learning_style: profile.preferredLearningStyle,
     wants_help_with: profile.wantsHelpWith.length ? profile.wantsHelpWith : null,
     avoid_topics: profile.avoidTopics.length ? profile.avoidTopics : null,
-    saved_generation_job_ids: profile.savedJobIds,
+    saved_modules: profile.savedJobIds,
   };
 }
 

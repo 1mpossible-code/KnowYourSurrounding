@@ -1,4 +1,16 @@
-import { CULTURAL_TOPICS, LANGUAGE_LEVELS, LEARNING_STYLES, CulturalTopic, LanguageLevel, LearningStyle, ProfilePatchInput } from '@/lib/cultural-orientation';
+import {
+  CULTURAL_TOPICS,
+  LANGUAGE_LEVELS,
+  LEARNING_STYLES,
+  SENSITIVE_AVOID_TOPICS,
+  WANTS_HELP_SITUATIONS,
+  CulturalTopic,
+  LanguageLevel,
+  LearningStyle,
+  ProfilePatchInput,
+  SensitiveAvoidTopic,
+  WantsHelpSituation,
+} from '@/lib/cultural-orientation';
 
 export const LOCAL_USER_ID_KEY = 'kys-demo-user-id';
 
@@ -67,9 +79,38 @@ export const ALL_TOPIC_VALUES = [...CULTURAL_TOPICS];
 export const LANGUAGE_LEVEL_OPTIONS = LANGUAGE_LEVELS.map((value) => ({ value, label: LANGUAGE_LEVEL_LABELS[value] }));
 export const LEARNING_STYLE_OPTIONS = LEARNING_STYLES.map((value) => ({ value, label: LEARNING_STYLE_LABELS[value] }));
 export const TOPIC_OPTIONS = CULTURAL_TOPICS.map((value) => ({ value, label: TOPIC_LABELS[value] }));
-export const HELP_OPTIONS = TOPIC_OPTIONS.map((option) => ({
-  value: option.value,
-  label: option.label,
+
+export const WANTS_HELP_LABELS: Record<WantsHelpSituation, string> = {
+  using_public_transit: 'Using public transit',
+  shopping_for_food: 'Shopping for food',
+  going_to_doctor: 'Going to the doctor',
+  talking_to_landlord: 'Talking to a landlord',
+  opening_bank_account: 'Opening a bank account',
+  using_libraries: 'Using libraries',
+  finding_community_events: 'Finding community events',
+  school_parent_interactions: 'School and parent interactions',
+  job_interviews: 'Job interviews',
+  calling_emergency_services: 'Calling emergency services',
+  understanding_local_laws: 'Understanding local laws',
+};
+
+export const HELP_OPTIONS = WANTS_HELP_SITUATIONS.map((value) => ({
+  value,
+  label: WANTS_HELP_LABELS[value],
+}));
+
+export const AVOID_TOPIC_LABELS: Record<SensitiveAvoidTopic, string> = {
+  religion: 'Religion and faith',
+  politics: 'Politics and current affairs',
+  gender: 'Gender roles and expectations',
+  dating: 'Dating and relationships',
+  legal_status: 'Immigration and legal status',
+  trauma: 'Trauma and mental health crises',
+};
+
+export const AVOID_TOPIC_OPTIONS = SENSITIVE_AVOID_TOPICS.map((value) => ({
+  value,
+  label: AVOID_TOPIC_LABELS[value],
 }));
 
 export function createInitialOnboardingForm(): OnboardingFormData {
@@ -80,7 +121,7 @@ export function createInitialOnboardingForm(): OnboardingFormData {
     languageLevel: '',
     priorityTopics: [...ALL_TOPIC_VALUES],
     preferredLearningStyle: '',
-    wantsHelpWith: [...ALL_TOPIC_VALUES],
+    wantsHelpWith: [...WANTS_HELP_SITUATIONS],
     avoidTopics: [],
   };
 }
@@ -100,4 +141,12 @@ export function buildProfilePatchFromOnboarding(form: OnboardingFormData): Profi
 
 export function getSelectedLabels(values: string[]) {
   return values.map((value) => TOPIC_LABELS[value as CulturalTopic] ?? value);
+}
+
+export function getHelpSelectionLabels(values: string[]) {
+  return values.map((value) => WANTS_HELP_LABELS[value as WantsHelpSituation] ?? value);
+}
+
+export function getAvoidSelectionLabels(values: string[]) {
+  return values.map((value) => AVOID_TOPIC_LABELS[value as SensitiveAvoidTopic] ?? value);
 }

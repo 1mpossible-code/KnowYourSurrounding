@@ -23,9 +23,9 @@ Fields:
 - `language_level`: general language comfort level in the destination language
 - `priority_topics`: array of cultural topics the user wants help with
 - `preferred_learning_style`: how the user prefers to learn
-- `wants_help_with`: array of daily-life situations the user wants guidance on
-- `avoid_topics`: optional sensitive topics to avoid
-- `saved_generation_job_ids`: UUID array of **completed** rows in `cultural_orientation_generation_jobs` the user favorited (not `cultural_orientation_modules` ids)
+- `wants_help_with`: array of daily-life situation slugs (not cultural topics); allowed: `using_public_transit`, `shopping_for_food`, `going_to_doctor`, `talking_to_landlord`, `opening_bank_account`, `using_libraries`, `finding_community_events`, `school_parent_interactions`, `job_interviews`, `calling_emergency_services`, `understanding_local_laws` (see check `valid_wants_help_with`)
+- `avoid_topics`: optional sensitive areas to avoid (slug values: `religion`, `politics`, `gender`, `dating`, `legal_status`, `trauma`)
+- `saved_modules`: UUID array of **completed** rows in `cultural_orientation_generation_jobs` the user favorited (despite the column name, these are generation job ids—not `cultural_orientation_modules` ids)
 - `created_at`, `updated_at`: timestamps
 
 No real auth is required for the demo. `user_id` should come from localStorage on the frontend.
@@ -42,7 +42,7 @@ No real auth is required for the demo. `user_id` should come from localStorage o
 
 ### `cultural_orientation_modules` (optional)
 
-Legacy or curated catalog of reusable modules. **Product flows can rely entirely on generation jobs** (`cultural_orientation_generation_jobs`) plus profile `saved_generation_job_ids` for user-specific content—no need to write canonical modules unless you want a shared library.
+Legacy or curated catalog of reusable modules. **Product flows can rely entirely on generation jobs** (`cultural_orientation_generation_jobs`) plus profile `saved_modules` (favorite job UUIDs) for user-specific content—no need to write canonical modules unless you want a shared library.
 
 Each module has:
 - `id`: UUID primary key

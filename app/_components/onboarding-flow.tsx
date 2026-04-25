@@ -4,9 +4,12 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
+  AVOID_TOPIC_OPTIONS,
   buildProfilePatchFromOnboarding,
   COUNTRY_OPTIONS,
   createInitialOnboardingForm,
+  getAvoidSelectionLabels,
+  getHelpSelectionLabels,
   HELP_OPTIONS,
   LANGUAGE_LEVEL_OPTIONS,
   LEARNING_STYLE_OPTIONS,
@@ -226,8 +229,8 @@ function SummaryStep({ form }: { form: OnboardingFormData }) {
     ['Language level', form.languageLevel || 'Not selected'],
     ['Learning style', form.preferredLearningStyle || 'Not selected'],
     ['Priority topics', getSelectedLabels(form.priorityTopics).join(', ')],
-    ['Help with', getSelectedLabels(form.wantsHelpWith).join(', ')],
-    ['Avoid topics', form.avoidTopics.length > 0 ? getSelectedLabels(form.avoidTopics).join(', ') : 'None selected'],
+    ['Help with', getHelpSelectionLabels(form.wantsHelpWith).join(', ')],
+    ['Topics to steer clear of', form.avoidTopics.length > 0 ? getAvoidSelectionLabels(form.avoidTopics).join(', ') : 'None selected'],
   ];
 
   return (
@@ -290,10 +293,10 @@ function renderStep(step: number, form: OnboardingFormData, setForm: StepProps['
   if (step === 6) {
     return (
       <MultiChoiceStep
-        options={TOPIC_OPTIONS}
+        options={AVOID_TOPIC_OPTIONS}
         selected={form.avoidTopics}
         onToggle={(value) => setForm((current) => ({ ...current, avoidTopics: toggleArrayValue(current.avoidTopics, value) }))}
-        onSelectAll={() => setForm((current) => ({ ...current, avoidTopics: TOPIC_OPTIONS.map((option) => option.value) }))}
+        onSelectAll={() => setForm((current) => ({ ...current, avoidTopics: AVOID_TOPIC_OPTIONS.map((option) => option.value) }))}
         onClearAll={() => setForm((current) => ({ ...current, avoidTopics: [] }))}
       />
     );

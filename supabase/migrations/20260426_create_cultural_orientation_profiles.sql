@@ -16,7 +16,7 @@ create table if not exists public.cultural_orientation_profiles (
   ),
   wants_help_with text[],
   avoid_topics text[],
-  saved_generation_job_ids uuid[] not null default '{}',
+  saved_modules uuid[] not null default '{}',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
