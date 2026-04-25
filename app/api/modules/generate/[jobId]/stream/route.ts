@@ -26,18 +26,28 @@ export async function GET(_request: Request, context: { params: Promise<{ jobId:
         controller.close();
       };
 
-      controller.enqueue(encode('status', {
-        jobId: job.id,
-        status: job.status,
-        progress: job.progress,
-        partialText: job.partialText,
-        module: job.module,
-        error: job.error,
-      }));
+      try {
+        controller.enqueue(encode('status', {
+          jobId: job.id,
+          status: job.status,
+          progress: job.progress,
+          partialText: job.partialText,
+          module: job.module,
+          error: job.error,
+        }));
+      } catch {
+        closeStream();
+        return;
+      }
 
       const unsubscribe = subscribe(jobId, (event) => {
         if (closed) return;
-        controller.enqueue(encode(event.type, event));
+        try {
+          controller.enqueue(encode(event.type, event));
+        } catch {
+          closeStream();
+          return;
+        }
         if (event.type === 'completed' || event.type === 'failed') {
           closeStream();
         }

@@ -90,16 +90,18 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
   }, [activeStage, workspace.stages]);
 
   const rootPath = getModuleStagePath(topic);
-  const currentDepth = useMemo(() => {
+  const getStageDepth = useCallback((stage: LocalModuleStage) => {
     let depth = 0;
-    let cursor: LocalModuleStage | undefined = activeStage;
-    const byId = new Map(workspace.stages.map((stage) => [stage.id, stage]));
+    let cursor: LocalModuleStage | undefined = stage;
+    const byId = new Map(workspace.stages.map((entry) => [entry.id, entry]));
     while (cursor?.parentStageId) {
       depth += 1;
       cursor = byId.get(cursor.parentStageId);
     }
     return depth;
-  }, [activeStage, workspace.stages]);
+  }, [workspace.stages]);
+
+  const currentDepth = useMemo(() => getStageDepth(activeStage), [activeStage, getStageDepth]);
 
   const patchStageAndPersist = useCallback((stageId: string, patch: Partial<LocalModuleStage>) => {
     setWorkspace((current) => {
@@ -331,10 +333,27 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
       return;
     }
 
+    if (activeStage.jobId && activeStage.status === 'completed' && !activeStage.text.trim()) {
+      queueMicrotask(async () => {
+        const fallback = await fetch(`/api/modules/generate/${activeStage.jobId}`, { cache: 'no-store' })
+          .then((res) => res.json())
+          .catch(() => null);
+        if (fallback?.module?.text) {
+          patchStageAndPersist(activeStage.id, {
+            title: fallback.module.title || activeStage.title,
+            text: fallback.module.text,
+            status: 'completed',
+          });
+        }
+        setBusy(false);
+      });
+      return;
+    }
+
     queueMicrotask(() => {
       setBusy(false);
     });
-  }, [activeStage, attachToJob, initialStageId, profile, startGenerationForStage]);
+  }, [activeStage, attachToJob, initialStageId, patchStageAndPersist, profile, startGenerationForStage]);
 
   const openBranchPage = useCallback((selectedText: string, preferredTitle?: string) => {
     if (!activeStage || !selectedText.trim()) return;
@@ -475,7 +494,7 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
                 ref={articleRef}
                 onMouseUp={handleArticleSelection}
                 onTouchEnd={handleArticleSelection}
-                className="rounded-[1.4rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 md:p-5"
+                className="rounded-[1.4rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-3 md:p-4"
               >
                 {isRootStage(activeStage) ? (
                   <div className="space-y-3 text-sm leading-7 opacity-80 md:text-base">
@@ -574,7 +593,7 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
           </div>
         ) : (
           <div className="space-y-3">
-            {historyStages.map((stage, index) => {
+            {historyStages.map((stage) => {
               const active = stage.id === activeStage.id;
               return (
                 <button
@@ -587,7 +606,7 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">Depth {index + 1}</div>
+                      <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">Depth {getStageDepth(stage)}</div>
                       <div className="mt-1 text-base font-black leading-6">{stage.title}</div>
                       <div className="mt-1 text-sm leading-6 opacity-80">
                         {stage.seedText ? `${stage.seedText.slice(0, 120)}${stage.seedText.length > 120 ? '…' : ''}` : 'Focused follow-up'}
