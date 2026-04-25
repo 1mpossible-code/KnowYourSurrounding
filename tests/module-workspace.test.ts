@@ -2,10 +2,12 @@ import { describe, expect, test } from 'bun:test';
 
 import {
   buildWorkspaceSummary,
+  compactWorkspaceForHome,
   createBlankWorkspace,
   createQueuedStage,
   getModuleStagePath,
   setActiveWorkspaceStage,
+  trimWorkspaceToStage,
   updateWorkspaceStage,
   upsertWorkspaceStage,
 } from '@/lib/module-workspace';
@@ -113,6 +115,65 @@ describe('module workspace helpers', () => {
       stageCount: 1,
       updatedAt: workspace.updatedAt,
     });
+  });
+
+  test('trimWorkspaceToStage removes later non-favorited stages', () => {
+    const workspace = upsertWorkspaceStage(
+      upsertWorkspaceStage(createBlankWorkspace('communication'), {
+        id: 'stage-2',
+        topic: 'communication',
+        title: 'Directness',
+        seedText: 'Directness matters.',
+        status: 'completed',
+        text: '# Directness',
+        createdAt: '2026-04-25T00:00:00.000Z',
+        updatedAt: '2026-04-25T00:00:00.000Z',
+      }),
+      {
+        id: 'stage-3',
+        topic: 'communication',
+        title: 'Tone repair',
+        seedText: 'Repairing tone.',
+        status: 'completed',
+        text: '# Tone repair',
+        createdAt: '2026-04-25T00:10:00.000Z',
+        updatedAt: '2026-04-25T00:10:00.000Z',
+      },
+    );
+
+    const trimmed = trimWorkspaceToStage(workspace, 'stage-2');
+    expect(trimmed.stages.map((stage) => stage.id)).not.toContain('stage-3');
+    expect(trimmed.activeStageId).toBe('stage-2');
+  });
+
+  test('compactWorkspaceForHome keeps root and favorited stages only', () => {
+    const workspace = upsertWorkspaceStage(
+      upsertWorkspaceStage(createBlankWorkspace('transit'), {
+        id: 'stage-2',
+        topic: 'transit',
+        title: 'Reloadable cards',
+        seedText: 'Reloadable cards are common.',
+        status: 'completed',
+        text: '# Reloadable cards',
+        favorited: true,
+        createdAt: '2026-04-25T00:00:00.000Z',
+        updatedAt: '2026-04-25T00:00:00.000Z',
+      }),
+      {
+        id: 'stage-3',
+        topic: 'transit',
+        title: 'Card inspectors',
+        seedText: 'Inspectors are strict.',
+        status: 'completed',
+        text: '# Card inspectors',
+        createdAt: '2026-04-25T00:10:00.000Z',
+        updatedAt: '2026-04-25T00:10:00.000Z',
+      },
+    );
+
+    const compacted = compactWorkspaceForHome(workspace);
+    expect(compacted.stages.map((stage) => stage.id)).toContain('stage-2');
+    expect(compacted.stages.map((stage) => stage.id)).not.toContain('stage-3');
   });
 
   test('getModuleStagePath returns root or stage route', () => {

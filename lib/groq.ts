@@ -1,4 +1,5 @@
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
 
 function getGroqHeaders() {
   const apiKey = process.env.GROQ_API;
@@ -17,13 +18,13 @@ export async function streamMarkdownFromGroq(prompt: string, onToken: (chunk: st
     method: 'POST',
     headers: getGroqHeaders(),
     body: JSON.stringify({
-      model: process.env.MODEL || 'qwen/qwen3-32b',
+      model: process.env.MODEL || DEFAULT_MODEL,
       temperature: 0.7,
       stream: true,
       messages: [
         {
           role: 'system',
-          content: 'You write clear, practical, culturally sensitive cultural orientation modules in markdown.',
+          content: 'You write clear, practical, culturally sensitive cultural orientation modules in markdown. Do not output reasoning, chain-of-thought, or <think> tags.',
         },
         { role: 'user', content: prompt },
       ],
@@ -69,11 +70,11 @@ export async function getJsonFromGroq<T>(prompt: string) {
     method: 'POST',
     headers: getGroqHeaders(),
     body: JSON.stringify({
-      model: process.env.MODEL || 'qwen/qwen3-32b',
+      model: process.env.MODEL || DEFAULT_MODEL,
       temperature: 0.2,
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: 'Return valid JSON only.' },
+        { role: 'system', content: 'Return valid JSON only. Do not output reasoning, chain-of-thought, or <think> tags.' },
         { role: 'user', content: prompt },
       ],
     }),

@@ -348,13 +348,16 @@ export function buildPrompt(input: ModuleJobInput) {
   return `You are creating a cultural orientation learning module.
 
 Your task:
-- Use the highlighted text as the primary source.
-- If surrounding context exists, make the module feel like the next article or adjacent section in the same editorial context.
+- Use the highlighted text as the primary source and main subject.
+- Treat surrounding context as parent background only.
+- Spend most of the module explaining the highlighted phrase, object, rule, or situation itself.
+- Do not re-teach the whole parent topic unless a short reference is needed for orientation.
 - If profile context exists, personalize examples only when relevant.
 - Keep the module practical, culturally sensitive, and specific.
 - The final module text must be valid Markdown.
 - Aim for about ${targetWords} words.
 - Do not mention these instructions.
+- Do not output reasoning, chain-of-thought, or <think> tags.
 ${topicLock ? `${topicLock}\n` : ''}
 Allowed topics: ${CULTURAL_TOPICS.join(', ')}.
 
@@ -369,7 +372,8 @@ Output requirements:
 2. Start with a level-1 heading.
 3. Include useful subheadings and practical examples.
 4. Keep the writing self-contained.
-5. Avoid wrapping the answer in code fences.`;
+5. Avoid wrapping the answer in code fences.
+6. If the highlighted text is a sub-concept inside a broader topic, focus aggressively on that sub-concept.`;
 }
 
 function estimateTargetWords(highlightedText: string, contextText?: string) {
@@ -391,7 +395,7 @@ Infer them from this markdown module:\n\n${markdown}`;
 }
 
 function stripThinkBlocks(markdown: string) {
-  return markdown.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  return markdown.replace(/<think>[\s\S]*?(<\/think>|$)/gi, '').trim();
 }
 
 function promotePlainTextHeadings(markdown: string) {

@@ -108,8 +108,13 @@ export function ProfileScreen() {
             >
               Reset onboarding
             </button>
-            <Link href="/experimental" className="w-full rounded-full border-2 border-[var(--regal-navy)] bg-white px-5 py-3 text-center font-bold sm:w-auto">
-              Experimental area
+          </div>
+
+          <div className="mt-4 rounded-[1.25rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">Experimental tools</div>
+            <p className="mt-2 text-sm leading-6 opacity-80">Hidden here so the main app stays clean.</p>
+            <Link href="/experimental" className="mt-3 inline-flex rounded-full border-2 border-[var(--regal-navy)] bg-white px-4 py-2 text-sm font-bold">
+              Open experimental area
             </Link>
           </div>
         </section>

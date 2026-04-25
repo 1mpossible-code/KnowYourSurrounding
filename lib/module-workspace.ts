@@ -13,6 +13,7 @@ export type LocalModuleStage = {
   seedText: string;
   status: LocalModuleStageStatus;
   text: string;
+  parentStageId?: string;
   jobId?: string;
   error?: string;
   favorited?: boolean;
@@ -49,6 +50,14 @@ export type ModuleWorkspaceSummary = {
   updatedAt: string;
 };
 
+function isMeaningfulStage(stage: LocalModuleStage) {
+  return stage.status !== 'blank' || stage.text.trim() || stage.jobId;
+}
+
+function isRootStage(stage: LocalModuleStage) {
+  return stage.status === 'blank' && !stage.seedText.trim() && !stage.text.trim() && !stage.jobId;
+}
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -71,7 +80,13 @@ export function createBlankStage(topic: CulturalTopic): LocalModuleStage {
   };
 }
 
-export function createQueuedStage(topic: CulturalTopic, title: string, seedText: string, stageId?: string) {
+export function createQueuedStage(
+  topic: CulturalTopic,
+  title: string,
+  seedText: string,
+  stageId?: string,
+  parentStageId?: string,
+) {
   const timestamp = nowIso();
   return {
     id: stageId ?? createId('stage'),
@@ -80,6 +95,7 @@ export function createQueuedStage(topic: CulturalTopic, title: string, seedText:
     seedText,
     status: 'queued',
     text: '',
+    parentStageId,
     createdAt: timestamp,
     updatedAt: timestamp,
   } satisfies LocalModuleStage;
@@ -135,7 +151,7 @@ export function setActiveWorkspaceStage(workspace: LocalModuleWorkspace, stageId
 }
 
 export function buildWorkspaceSummary(workspace: LocalModuleWorkspace): ModuleWorkspaceSummary | null {
-  const nonBlank = workspace.stages.filter((stage) => stage.status !== 'blank' || stage.text.trim() || stage.jobId);
+  const nonBlank = workspace.stages.filter(isMeaningfulStage);
   const latest = nonBlank.at(-1);
   if (!latest) return null;
   return {
@@ -191,6 +207,43 @@ export function removeJobFromWorkspaces(jobId: string) {
     ),
   }));
   writeStoredWorkspaces(next);
+}
+
+export function trimWorkspaceToStage(workspace: LocalModuleWorkspace, stageId: string) {
+  const index = workspace.stages.findIndex((stage) => stage.id === stageId);
+  if (index === -1) return workspace;
+
+  const nextStages = workspace.stages.filter((stage, stageIndex) => stageIndex <= index || stage.favorited);
+  const activeStageId = nextStages.some((stage) => stage.id === stageId)
+    ? stageId
+    : nextStages.at(-1)?.id ?? workspace.activeStageId;
+
+  return {
+    ...workspace,
+    stages: nextStages,
+    activeStageId,
+    updatedAt: nowIso(),
+  } satisfies LocalModuleWorkspace;
+}
+
+export function compactWorkspaceForHome(workspace: LocalModuleWorkspace) {
+  const rootStage = workspace.stages.find(isRootStage) ?? createBlankStage(workspace.topic);
+  const favoriteStages = workspace.stages.filter((stage) => stage.favorited);
+  const nextStages = [rootStage, ...favoriteStages.filter((stage) => stage.id !== rootStage.id)]
+    .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+
+  return {
+    ...workspace,
+    stages: nextStages,
+    activeStageId: rootStage.id,
+    updatedAt: nowIso(),
+  } satisfies LocalModuleWorkspace;
+}
+
+export function compactStoredWorkspacesForHome() {
+  const workspaces = readStoredWorkspaces().map(compactWorkspaceForHome);
+  writeStoredWorkspaces(workspaces);
+  return workspaces;
 }
 
 export function getModuleStagePath(topic: CulturalTopic, stageId?: string) {
@@ -277,6 +330,7 @@ function normalizeStage(value: unknown, topic: CulturalTopic): LocalModuleStage 
     seedText: typeof data.seedText === 'string' ? data.seedText : '',
     status,
     text: typeof data.text === 'string' ? data.text : '',
+    parentStageId: typeof data.parentStageId === 'string' ? data.parentStageId : undefined,
     jobId: typeof data.jobId === 'string' ? data.jobId : undefined,
     error: typeof data.error === 'string' ? data.error : undefined,
     favorited: Boolean(data.favorited),

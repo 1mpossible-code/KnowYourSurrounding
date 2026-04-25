@@ -8,10 +8,12 @@ import { PopupPanel } from '@/app/_components/popup-panel';
 import { ChatSuggestion } from '@/lib/chat-suggestions';
 import { CulturalTopic } from '@/lib/cultural-orientation';
 import {
-  buildWorkspaceSummary,
+  compactStoredWorkspacesForHome,
   createBlankWorkspace,
+  createQueuedStage,
   getModuleStagePath,
   LocalModuleStage,
+  queuePendingBranchRequest,
   readStoredWorkspaces,
   removeJobFromWorkspaces,
   saveWorkspace,
@@ -26,26 +28,26 @@ import {
 } from '@/lib/starter-modules';
 
 const TOPIC_BACKGROUNDS: Record<CulturalTopic, string> = {
-  greetings: 'from-[#1f5d8b] via-[#3a7ca5] to-[#8ac6d1]',
-  public_behavior: 'from-[#355c7d] via-[#6c5b7b] to-[#c06c84]',
-  communication: 'from-[#5448c8] via-[#7765f7] to-[#b499ff]',
-  personal_space: 'from-[#23667d] via-[#3d8b99] to-[#91d8d3]',
-  time: 'from-[#16324f] via-[#235789] to-[#c8d8e4]',
-  work: 'from-[#125d68] via-[#2f8f9d] to-[#b5ead7]',
-  school: 'from-[#3f37c9] via-[#5a54f9] to-[#b7b5ff]',
-  gender: 'from-[#8f3b76] via-[#c0578a] to-[#f7b3cc]',
-  religion: 'from-[#4a266a] via-[#7d3c98] to-[#c38fff]',
-  dating: 'from-[#ba3f7b] via-[#e35d9f] to-[#ffb6c9]',
-  conflict: 'from-[#264653] via-[#2a6f73] to-[#84c69b]',
-  laws: 'from-[#243b53] via-[#486581] to-[#d9e2ec]',
-  money: 'from-[#157347] via-[#2e8b57] to-[#9ed2a7]',
-  food: 'from-[#b85c38] via-[#e07a5f] to-[#f2cc8f]',
-  clothing: 'from-[#495057] via-[#6c757d] to-[#ced4da]',
-  digital: 'from-[#22577a] via-[#38a3a5] to-[#80ed99]',
-  safety: 'from-[#861657] via-[#aa4465] to-[#f08a8a]',
-  healthcare: 'from-[#1d7874] via-[#4ea699] to-[#c6f1e7]',
-  government: 'from-[#283d8f] via-[#3d5af1] to-[#9ab3ff]',
-  transit: 'from-[#2b59c3] via-[#4f7df3] to-[#9ed8ff]',
+  greetings: 'from-[#d97706] via-[#f59e0b] to-[#fde68a]',
+  public_behavior: 'from-[#c2410c] via-[#ea580c] to-[#fdba74]',
+  communication: 'from-[#b45309] via-[#f59e0b] to-[#fed7aa]',
+  personal_space: 'from-[#9a3412] via-[#c2410c] to-[#fdba74]',
+  time: 'from-[#7c2d12] via-[#c2410c] to-[#fdba74]',
+  work: 'from-[#92400e] via-[#d97706] to-[#fde68a]',
+  school: 'from-[#b45309] via-[#fb923c] to-[#ffedd5]',
+  gender: 'from-[#9a3412] via-[#f97316] to-[#fdba74]',
+  religion: 'from-[#7c2d12] via-[#ea580c] to-[#fed7aa]',
+  dating: 'from-[#c2410c] via-[#fb923c] to-[#fecaca]',
+  conflict: 'from-[#7c2d12] via-[#b45309] to-[#fdba74]',
+  laws: 'from-[#78350f] via-[#b45309] to-[#fde68a]',
+  money: 'from-[#854d0e] via-[#ca8a04] to-[#fde68a]',
+  food: 'from-[#c2410c] via-[#fb923c] to-[#fed7aa]',
+  clothing: 'from-[#9a3412] via-[#f97316] to-[#ffedd5]',
+  digital: 'from-[#92400e] via-[#fb923c] to-[#fde68a]',
+  safety: 'from-[#991b1b] via-[#dc2626] to-[#fca5a5]',
+  healthcare: 'from-[#9a3412] via-[#f97316] to-[#fde68a]',
+  government: 'from-[#7c2d12] via-[#d97706] to-[#fde68a]',
+  transit: 'from-[#9a3412] via-[#ea580c] to-[#fdba74]',
 };
 
 type JobSummary = {
@@ -64,10 +66,9 @@ type ModuleCard = {
   topic: CulturalTopic;
   title: string;
   subtitle: string;
-  status: string;
   href: string;
-  removableJobId?: string;
-  progressLabel: string;
+  removableJobId: string;
+  statusLabel: string;
 };
 
 function LoadingScreen({ message }: { message: string }) {
@@ -82,13 +83,6 @@ function LoadingScreen({ message }: { message: string }) {
       </div>
     </main>
   );
-}
-
-function statusLabel(status: JobSummary['status']) {
-  if (status === 'queued') return 'Queued';
-  if (status === 'generating') return 'Writing';
-  if (status === 'completed') return 'Ready';
-  return 'Issue';
 }
 
 async function fetchJobs(jobIds: string[]) {
@@ -111,49 +105,42 @@ function TopicShelf({
 }) {
   return (
     <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--sandy-brown)] md:text-sm">Topic shelf</p>
-          <h2 className="mt-1 text-2xl font-black md:text-3xl">{TOPIC_LABELS[topic]}</h2>
-        </div>
-        <Link href={getModuleStagePath(topic)} className="rounded-full border-2 border-[var(--regal-navy)] bg-white px-4 py-2 text-sm font-bold">
-          Open root page
-        </Link>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--sandy-brown)] md:text-sm">Topic shelf</p>
+        <h2 className="mt-1 text-2xl font-black md:text-3xl">{TOPIC_LABELS[topic]}</h2>
       </div>
 
       <div className="-mx-3 flex gap-4 overflow-x-auto px-3 pb-1">
         {cards.map((card) => (
           <article
             key={card.id}
-            className="relative h-[19.5rem] w-[18.5rem] shrink-0 overflow-hidden rounded-[1.9rem] border-4 border-[var(--regal-navy)] bg-white shadow-[8px_8px_0_var(--royal-gold)] md:h-[21rem] md:w-[21rem]"
+            className="relative h-[18.75rem] w-[18rem] shrink-0 overflow-hidden rounded-[1.8rem] border-4 border-[var(--regal-navy)] bg-white shadow-[8px_8px_0_var(--royal-gold)] md:h-[20rem] md:w-[19.5rem]"
           >
-            {card.removableJobId ? (
-              <details className="absolute right-3 top-3 z-10">
-                <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border-2 border-[var(--regal-navy)] bg-white text-lg font-black">•••</summary>
-                <div className="absolute right-0 mt-2 w-40 rounded-[1rem] border-2 border-[var(--regal-navy)] bg-white p-2 shadow-[4px_4px_0_var(--regal-navy)]">
-                  <button
-                    type="button"
-                    onClick={() => onUnfollow(card.removableJobId as string)}
-                    className="w-full rounded-[0.8rem] px-3 py-2 text-left text-sm font-bold hover:bg-[var(--lemon-chiffon)]"
-                  >
-                    Unfollow note
-                  </button>
-                </div>
-              </details>
-            ) : null}
+            <details className="absolute right-3 top-3 z-10">
+              <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border-2 border-[var(--regal-navy)] bg-white text-lg font-black">•••</summary>
+              <div className="absolute right-0 mt-2 w-40 rounded-[1rem] border-2 border-[var(--regal-navy)] bg-white p-2 shadow-[4px_4px_0_var(--regal-navy)]">
+                <button
+                  type="button"
+                  onClick={() => onUnfollow(card.removableJobId)}
+                  className="w-full rounded-[0.8rem] px-3 py-2 text-left text-sm font-bold hover:bg-[var(--lemon-chiffon)]"
+                >
+                  Unfollow note
+                </button>
+              </div>
+            </details>
 
             <Link href={card.href} className="flex h-full flex-col">
-              <div className={`min-h-[12.2rem] flex-1 bg-gradient-to-br ${TOPIC_BACKGROUNDS[topic]} p-5 text-white`}>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/82">{card.status}</p>
-                <h3 className="mt-3 line-clamp-3 text-[1.95rem] font-black leading-[1.02]">{card.title}</h3>
-                <p className="mt-3 line-clamp-3 max-w-[14rem] text-sm leading-6 text-white/86">{card.subtitle}</p>
+              <div className={`min-h-[11.75rem] flex-1 bg-gradient-to-br ${TOPIC_BACKGROUNDS[topic]} p-5 text-white`}>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/82">{card.statusLabel}</p>
+                <h3 className="mt-3 line-clamp-3 text-[1.85rem] font-black leading-[1.04]">{card.title}</h3>
+                <p className="mt-3 line-clamp-3 max-w-[13rem] text-sm leading-6 text-white/88">{card.subtitle}</p>
               </div>
-              <div className="grid grid-cols-[1fr_auto] items-center gap-3 bg-[#221f1d] px-5 py-4 text-white">
+              <div className="grid grid-cols-[1fr_auto] items-center gap-3 bg-[#2b1c14] px-5 py-4 text-white">
                 <div>
-                  <p className="text-3xl font-black leading-none">{card.progressLabel}</p>
-                  <p className="mt-2 text-xs uppercase tracking-[0.22em] text-white/70">Current state</p>
+                  <p className="text-3xl font-black leading-none">Saved</p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.22em] text-white/72">Quick return</p>
                 </div>
-                <div className="flex h-16 w-16 items-center justify-center rounded-full border-[6px] border-white/25 bg-[#151311] text-2xl">›</div>
+                <div className="flex h-16 w-16 items-center justify-center rounded-full border-[6px] border-white/25 bg-[#1a110c] text-2xl">›</div>
               </div>
             </Link>
           </article>
@@ -167,10 +154,12 @@ function ChatAgentPopup({
   open,
   onClose,
   profile,
+  onPick,
 }: {
   open: boolean;
   onClose: () => void;
   profile: ProfileResponse;
+  onPick: (suggestion: ChatSuggestion) => void;
 }) {
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
@@ -204,7 +193,7 @@ function ChatAgentPopup({
   }
 
   return (
-    <PopupPanel open={open} onClose={onClose} eyebrow="Chat agent" title="Find the next three useful notes">
+    <PopupPanel open={open} onClose={onClose} eyebrow="Chat agent" title="Ask once, get three clean note directions">
       <form className="space-y-4" onSubmit={handleSubmit}>
         <textarea
           value={question}
@@ -225,20 +214,20 @@ function ChatAgentPopup({
       <div className="mt-5 grid gap-3">
         {suggestions.length === 0 ? (
           <div className="rounded-[1.3rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 text-sm leading-6 opacity-80">
-            Ask one good question and this popup will return three strong directions you can turn into notes.
+            Ask one good question and we’ll open the next note page for you immediately.
           </div>
         ) : (
           suggestions.map((item) => (
-            <Link
+            <button
               key={item.id}
-              href={`${getModuleStagePath(item.topic)}?seed=${encodeURIComponent(item.seedText)}&title=${encodeURIComponent(item.title)}`}
-              onClick={onClose}
-              className="rounded-[1.3rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4"
+              type="button"
+              onClick={() => onPick(item)}
+              className="rounded-[1.3rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 text-left"
             >
               <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">{TOPIC_LABELS[item.topic]}</div>
               <h3 className="mt-2 text-lg font-black leading-6">{item.title}</h3>
               <p className="mt-2 text-sm leading-6 opacity-80">{item.summary}</p>
-            </Link>
+            </button>
           ))
         )}
       </div>
@@ -277,6 +266,28 @@ function syncJobsIntoWorkspaces(jobs: JobSummary[], profile: ProfileResponse, st
   });
 }
 
+async function autoFavoriteStarterNotes(profile: ProfileResponse, jobs: JobSummary[], starterEntries: StoredStarterGuideJob[]) {
+  let nextProfile = profile;
+
+  for (const entry of starterEntries) {
+    if (nextProfile.savedJobIds.includes(entry.jobId)) continue;
+    const job = jobs.find((item) => item.jobId === entry.jobId);
+    if (!job?.module || job.status !== 'completed') continue;
+
+    const response = await fetch(`/api/profile/${encodeURIComponent(nextProfile.userId)}/favorites`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId: entry.jobId, action: 'add' }),
+    });
+    const data = await response.json();
+    if (response.ok && data.profile) {
+      nextProfile = data.profile as ProfileResponse;
+    }
+  }
+
+  return nextProfile;
+}
+
 export function HomeDashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -285,69 +296,45 @@ export function HomeDashboard() {
 
   const loadHomeData = useCallback(async (currentProfile: ProfileResponse) => {
     const starterEntries = readStoredStarterGuideJobs();
-    const initialWorkspaces = readStoredWorkspaces();
-    const workspaceJobIds = initialWorkspaces.flatMap((workspace) => workspace.stages.map((stage) => stage.jobId).filter(Boolean) as string[]);
+    const workspaceJobIds = readStoredWorkspaces().flatMap((workspace) => workspace.stages.map((stage) => stage.jobId).filter(Boolean) as string[]);
     const jobIds = [...new Set([...currentProfile.savedJobIds, ...starterEntries.map((entry) => entry.jobId), ...workspaceJobIds])];
     const jobs = await fetchJobs(jobIds);
+
     syncJobsIntoWorkspaces(jobs, currentProfile, starterEntries);
-    const workspaceSummaries = readStoredWorkspaces().map(buildWorkspaceSummary).filter(Boolean);
+    const nextProfile = await autoFavoriteStarterNotes(currentProfile, jobs, starterEntries);
+    syncJobsIntoWorkspaces(jobs, nextProfile, starterEntries);
+    compactStoredWorkspacesForHome();
 
+    const starterByJobId = new Map(starterEntries.map((entry) => [entry.jobId, entry]));
     const cards = new Map<CulturalTopic, ModuleCard[]>();
-    const pushCard = (topic: CulturalTopic, card: ModuleCard) => {
-      const list = cards.get(topic) ?? [];
-      cards.set(topic, [...list, card]);
-    };
-
-    workspaceSummaries.forEach((summary) => {
-      if (!summary) return;
-      pushCard(summary.topic, {
-        id: `workspace-${summary.topic}`,
-        topic: summary.topic,
-        title: summary.latestStageTitle,
-        subtitle: `${summary.stageCount} note${summary.stageCount === 1 ? '' : 's'} already live in this topic chain`,
-        status: 'Workspace chain',
-        href: getModuleStagePath(summary.topic, summary.latestStageId),
-        progressLabel: summary.latestStageStatus === 'completed' ? 'Ready' : summary.latestStageStatus,
-      });
-    });
-
-    starterEntries.forEach((entry) => {
-      const starter = getStarterGuideById(entry.specId);
-      if (!starter) return;
-      const job = jobs.find((item) => item.jobId === entry.jobId);
-      pushCard(starter.topic, {
-        id: `starter-${entry.jobId}`,
-        topic: starter.topic,
-        title: starter.titleHint,
-        subtitle: starter.tagline,
-        status: 'Starter lesson',
-        href: getModuleStagePath(starter.topic, `stage-${entry.jobId}`),
-        progressLabel: job ? statusLabel(job.status) : 'Queued',
-      });
-    });
 
     jobs
-      .filter((job) => currentProfile.savedJobIds.includes(job.jobId) && job.module?.topic)
+      .filter((job) => nextProfile.savedJobIds.includes(job.jobId) && job.module?.topic)
       .forEach((job) => {
         const topic = job.module?.topic as CulturalTopic;
-        pushCard(topic, {
+        const starter = starterByJobId.get(job.jobId);
+        const starterSpec = starter ? getStarterGuideById(starter.specId) : undefined;
+        const list = cards.get(topic) ?? [];
+        list.push({
           id: `favorite-${job.jobId}`,
           topic,
           title: job.module?.title || 'Saved note',
-          subtitle: 'Pinned from your note history',
-          status: 'Saved note',
+          subtitle: starterSpec ? starterSpec.tagline : 'Saved so you can jump back without keeping the whole branch alive.',
           href: getModuleStagePath(topic, `stage-${job.jobId}`),
           removableJobId: job.jobId,
-          progressLabel: 'Saved',
+          statusLabel: starterSpec ? 'Starter favorite' : 'Saved note',
         });
+        cards.set(topic, list);
       });
 
-    const next = Object.fromEntries(
-      Array.from(cards.entries())
-        .map(([topic, items]) => [topic, dedupeCards(items)])
-        .filter(([, items]) => items.length > 0),
+    setProfile(nextProfile);
+    setCardsByTopic(
+      Object.fromEntries(
+        Array.from(cards.entries())
+          .map(([topic, items]) => [topic, dedupeCards(items)])
+          .filter(([, items]) => items.length > 0),
+      ),
     );
-    setCardsByTopic(next);
   }, []);
 
   useEffect(() => {
@@ -365,7 +352,6 @@ export function HomeDashboard() {
           router.replace('/onboarding');
           return;
         }
-        setProfile(data.profile);
         await loadHomeData(data.profile);
       })
       .catch(() => {
@@ -384,73 +370,82 @@ export function HomeDashboard() {
     const data = await response.json();
     if (!response.ok) return;
     removeJobFromWorkspaces(jobId);
-    setProfile(data.profile);
     await loadHomeData(data.profile);
+  }
+
+  function handlePickSuggestion(suggestion: ChatSuggestion) {
+    const base = readStoredWorkspaces().find((workspace) => workspace.topic === suggestion.topic) ?? createBlankWorkspace(suggestion.topic);
+    const rootStageId = base.stages[0]?.id;
+    const stage = createQueuedStage(suggestion.topic, suggestion.title, suggestion.seedText, undefined, rootStageId);
+    const next = upsertWorkspaceStage(base, stage);
+
+    queuePendingBranchRequest({
+      topic: suggestion.topic,
+      stageId: stage.id,
+      source: 'draft',
+      title: suggestion.title,
+      selectedText: suggestion.seedText,
+      contextText: suggestion.summary,
+      createdAt: stage.createdAt,
+    });
+
+    saveWorkspace(next);
+    setChatOpen(false);
+    router.push(getModuleStagePath(suggestion.topic, stage.id));
   }
 
   const orderedTopics = useMemo(() => Object.keys(cardsByTopic) as CulturalTopic[], [cardsByTopic]);
 
   if (!profile) {
-    return <LoadingScreen message="Loading your saved profile and modules." />;
+    return <LoadingScreen message="Loading your saved modules." />;
   }
 
   return (
     <>
       <main className="min-h-screen bg-[var(--lemon-chiffon)] px-3 py-4 text-[var(--regal-navy)] md:px-6 md:py-8">
         <div className="mx-auto max-w-7xl space-y-4 md:space-y-6">
-          <section className="overflow-hidden rounded-[1.9rem] border-4 border-[var(--regal-navy)] bg-white shadow-[10px_10px_0_var(--royal-gold)]">
-            <div className="bg-[linear-gradient(135deg,#0d3b66_0%,#245b8a_60%,#f4d35e_100%)] px-4 py-5 text-white md:px-6 md:py-6">
+          <section className="overflow-hidden rounded-[1.85rem] border-4 border-[var(--regal-navy)] bg-white shadow-[10px_10px_0_var(--royal-gold)]">
+            <div className="bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_58%,#f4d35e_100%)] px-4 py-5 text-white md:px-6 md:py-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-2xl">
                   <p className="text-sm font-semibold uppercase tracking-[0.25em] text-white/82">Know Your Surroundings</p>
-                  <h1 className="mt-3 text-3xl font-black leading-tight md:text-5xl">Modules that keep branching into deeper notes</h1>
+                  <h1 className="mt-3 text-3xl font-black leading-tight md:text-5xl">Saved modules first, deeper notes only when you need them</h1>
                   <p className="mt-4 text-sm leading-6 text-white/88 md:text-base md:leading-7">
-                    Keep the home page clean, open fixed lesson cards, and let every good passage spin off into another focused page.
+                    The shelf only shows notes worth keeping. Pick text inside any note and we’ll immediately spin up a sharper follow-up page.
                   </p>
                 </div>
-                <div className="grid w-full gap-3 sm:w-auto sm:min-w-[18rem]">
+                <div className="flex w-full flex-col gap-3 sm:w-auto sm:min-w-[16rem]">
                   <button
                     type="button"
                     onClick={() => setChatOpen(true)}
                     className="rounded-full border-2 border-white/80 bg-white/14 px-5 py-3 text-center font-bold text-white backdrop-blur-sm"
                   >
-                    Open chat agent
+                    Ask the chat agent
                   </button>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Link href="/profile" className="rounded-full border-2 border-white/80 bg-white/14 px-5 py-3 text-center font-bold text-white backdrop-blur-sm">
-                      Profile
-                    </Link>
-                    <Link href="/experimental" className="rounded-full border-2 border-white/80 bg-white/14 px-5 py-3 text-center font-bold text-white backdrop-blur-sm">
-                      Experimental
-                    </Link>
-                  </div>
+                  <Link href="/profile" className="rounded-full border-2 border-white/80 bg-white/14 px-5 py-3 text-center font-bold text-white backdrop-blur-sm">
+                    Profile
+                  </Link>
                 </div>
               </div>
             </div>
-            <div className="grid gap-3 px-4 py-4 md:grid-cols-3 md:px-6 md:py-5">
+            <div className="grid gap-3 px-4 py-4 md:grid-cols-2 md:px-6 md:py-5">
               <div className="rounded-[1.35rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4">
-                <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">Topic shelves</div>
+                <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">Saved shelves</div>
                 <div className="mt-2 text-3xl font-black">{orderedTopics.length}</div>
               </div>
               <div className="rounded-[1.35rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4">
                 <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">Saved notes</div>
                 <div className="mt-2 text-3xl font-black">{profile.savedJobIds.length}</div>
               </div>
-              <div className="rounded-[1.35rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4">
-                <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">Priority route</div>
-                <div className="mt-2 text-base font-black leading-6 md:text-lg">
-                  {profile.originCountry || 'Unknown origin'} → {profile.destinationCountry || 'Unknown destination'}
-                </div>
-              </div>
             </div>
           </section>
 
           {orderedTopics.length === 0 ? (
             <section className="rounded-[1.75rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[8px_8px_0_var(--sandy-brown)] md:p-6">
-              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">No modules yet</p>
-              <h2 className="mt-2 text-2xl font-black md:text-3xl">Your shelves will fill as you generate and save notes</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">No saved modules yet</p>
+              <h2 className="mt-2 text-2xl font-black md:text-3xl">Ask the chat agent or wait for your first starter note</h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 opacity-80 md:text-base">
-                Starter lessons, pinned notes, and every branching page will show up here once they exist.
+                Only favorited notes stay on the shelf. Your first starter note will be favorited automatically once it finishes.
               </p>
             </section>
           ) : (
@@ -461,7 +456,7 @@ export function HomeDashboard() {
         </div>
       </main>
 
-      <ChatAgentPopup open={chatOpen} onClose={() => setChatOpen(false)} profile={profile} />
+      <ChatAgentPopup open={chatOpen} onClose={() => setChatOpen(false)} profile={profile} onPick={handlePickSuggestion} />
     </>
   );
 }
@@ -469,7 +464,7 @@ export function HomeDashboard() {
 function dedupeCards(cards: ModuleCard[]) {
   const seen = new Set<string>();
   return cards.filter((card) => {
-    const key = `${card.title}-${card.status}`;
+    const key = `${card.title}-${card.statusLabel}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

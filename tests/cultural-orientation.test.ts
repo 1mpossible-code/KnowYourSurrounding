@@ -53,6 +53,11 @@ describe('module generation helpers', () => {
     expect(markdown).toBe('# Title Line\n## Section Name\nBody paragraph here.');
   });
 
+  test('normalizeMarkdown strips unfinished think blocks during streaming', () => {
+    const markdown = normalizeMarkdown(`<think>internal reasoning still streaming\n# Hidden\nVisible Line`);
+    expect(markdown).toBe('');
+  });
+
   test('coerceTopic infers topic from content', () => {
     expect(coerceTopic('', 'The manager gave direct feedback during a meeting at work.')).toBe('communication');
     expect(coerceTopic('communication', 'anything')).toBe('communication');
