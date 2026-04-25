@@ -48,6 +48,11 @@ describe('module generation helpers', () => {
     expect(normalizeMarkdown('```\n# Hello\n```')).toBe('# Hello');
   });
 
+  test('normalizeMarkdown strips think blocks and promotes plain headings', () => {
+    const markdown = normalizeMarkdown(`<think>internal reasoning</think>\nTitle Line\nSection Name\nBody paragraph here.`);
+    expect(markdown).toBe('# Title Line\n## Section Name\nBody paragraph here.');
+  });
+
   test('coerceTopic infers topic from content', () => {
     expect(coerceTopic('', 'The manager gave direct feedback during a meeting at work.')).toBe('communication');
     expect(coerceTopic('communication', 'anything')).toBe('communication');

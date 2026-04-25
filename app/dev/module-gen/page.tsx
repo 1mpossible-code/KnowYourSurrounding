@@ -1,8 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+
+import { MarkdownRenderer } from '@/app/_components/markdown-renderer';
 
 type JobSummary = {
   jobId: string;
@@ -179,8 +179,8 @@ export default function ModuleGenDevPage() {
             {job.error ? <p className="rounded-2xl border-2 border-[var(--tomato)] bg-white px-4 py-3 text-[var(--tomato)]">{job.error}</p> : null}
           </form>
 
-          <article className="prose prose-slate mt-5 max-w-none rounded-[1.5rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-5 prose-headings:text-[var(--regal-navy)] prose-a:text-[var(--tomato)] prose-strong:text-[var(--regal-navy)]">
-            {renderedMarkdown ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{renderedMarkdown}</ReactMarkdown> : <p>Your generated markdown will appear here.</p>}
+          <article className="mt-5 rounded-[1.5rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-5">
+            {renderedMarkdown ? <MarkdownRenderer content={renderedMarkdown} /> : <p>Your generated markdown will appear here.</p>}
           </article>
         </section>
 

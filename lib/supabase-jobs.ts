@@ -133,6 +133,16 @@ export async function loadJob(id: string) {
   return rows[0] ? toJob(rows[0]) : null;
 }
 
+export async function loadJobsByIds(ids: string[]) {
+  if (ids.length === 0) return [];
+  const endpoint = getEndpoint(`?id=in.(${ids.map((id) => `"${encodeURIComponent(id)}"`).join(',')})&select=*`);
+  const headers = getHeaders();
+  if (!endpoint || !headers) return [];
+
+  const rows = await request<SupabaseJobRow[]>(endpoint, { headers });
+  return rows.map(toJob);
+}
+
 export async function loadRecentJobs(limit = 12) {
   const endpoint = getEndpoint(`?select=*&order=updated_at.desc&limit=${limit}`);
   const headers = getHeaders();

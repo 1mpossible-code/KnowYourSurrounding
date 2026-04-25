@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { listJobs } from '@/lib/job-store';
+import { listJobs, listJobsByIds } from '@/lib/job-store';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,8 +19,17 @@ function jsonResponse(data: unknown, status = 200) {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  const idsParam = url.searchParams.get('ids');
   const limit = Number(url.searchParams.get('limit') || 12);
-  const jobs = await listJobs(Number.isInteger(limit) && limit > 0 ? Math.min(limit, 50) : 12);
+  const jobs = idsParam
+    ? await listJobsByIds(
+        idsParam
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean)
+          .slice(0, 20),
+      )
+    : await listJobs(Number.isInteger(limit) && limit > 0 ? Math.min(limit, 50) : 12);
 
   return jsonResponse({ jobs: jobs.map((job) => ({
     jobId: job.id,

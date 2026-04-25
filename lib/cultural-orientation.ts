@@ -390,8 +390,40 @@ export function buildMetadataPrompt(markdown: string) {
 Infer them from this markdown module:\n\n${markdown}`;
 }
 
+function stripThinkBlocks(markdown: string) {
+  return markdown.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
+
+function promotePlainTextHeadings(markdown: string) {
+  const lines = markdown.split('\n').map((line) => line.trimEnd());
+  const hasMarkdownHeading = lines.some((line) => /^#{1,6}\s+/.test(line.trim()));
+  if (hasMarkdownHeading) return lines.join('\n').trim();
+
+  const firstContentIndex = lines.findIndex((line) => line.trim().length > 0);
+  if (firstContentIndex === -1) return '';
+
+  const nextLines = [...lines];
+  nextLines[firstContentIndex] = `# ${nextLines[firstContentIndex].trim().replace(/^#+\s*/, '')}`;
+
+  for (let index = firstContentIndex + 1; index < nextLines.length; index += 1) {
+    const current = nextLines[index]?.trim();
+    const next = nextLines[index + 1]?.trim() ?? '';
+    if (!current || current.startsWith('#') || current.startsWith('-') || current.startsWith('*') || /^\d+\./.test(current)) continue;
+    if (current.length > 64) continue;
+    if (/[.!?:)]$/.test(current)) continue;
+    if (!next || next.startsWith('#') || next.startsWith('-') || next.startsWith('*') || /^\d+\./.test(next)) continue;
+    nextLines[index] = `## ${current.replace(/^#+\s*/, '')}`;
+  }
+
+  return nextLines.join('\n').trim();
+}
+
 export function normalizeMarkdown(markdown: string) {
-  return markdown.replace(/^```markdown\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+  const unfenced = markdown.replace(/^```markdown\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+  const withoutThinking = stripThinkBlocks(unfenced);
+  return promotePlainTextHeadings(withoutThinking)
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 export function deriveTitleFromMarkdown(markdown: string) {

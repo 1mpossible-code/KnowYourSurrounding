@@ -55,4 +55,36 @@ describe('chat suggestions helpers', () => {
       'Expected exactly 3 suggestions.',
     );
   });
+
+  test('normalizeChatSuggestionsResponse accepts nested data.suggestions', () => {
+    const suggestions = normalizeChatSuggestionsResponse({
+      data: {
+        suggestions: [
+          { title: 'A', topic: 'work', summary: 'Sa', seedText: 'Ta' },
+          { title: 'B', topic: 'food', summary: 'Sb', seedText: 'Tb' },
+          { title: 'C', topic: 'time', summary: 'Sc', seedText: 'Tc' },
+        ],
+      },
+    });
+    expect(suggestions).toHaveLength(3);
+    expect(suggestions[0]?.title).toBe('A');
+  });
+
+  test('normalizeChatSuggestionsResponse keeps first three when model returns extras', () => {
+    const suggestions = normalizeChatSuggestionsResponse({
+      suggestions: [
+        { title: 'One', topic: 'work', summary: 'S1', seedText: 'T1' },
+        { title: 'Two', topic: 'food', summary: 'S2', seedText: 'T2' },
+        { title: 'Three', topic: 'time', summary: 'S3', seedText: 'T3' },
+        { title: 'Four', topic: 'laws', summary: 'S4', seedText: 'T4' },
+      ],
+    });
+    expect(suggestions).toHaveLength(3);
+    expect(suggestions[2]?.title).toBe('Three');
+  });
+
+  test('validateChatSuggestionsInput omits previousSuggestions when absent', () => {
+    const input = validateChatSuggestionsInput({ question: 'Hello?' });
+    expect(input.previousSuggestions).toBeUndefined();
+  });
 });

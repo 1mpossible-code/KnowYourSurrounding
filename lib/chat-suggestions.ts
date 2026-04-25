@@ -39,9 +39,26 @@ type RawSuggestion = {
   seedText?: string;
 };
 
-type RawSuggestionsResponse = {
-  suggestions?: RawSuggestion[];
-};
+/** Pull a suggestions array from common model JSON shapes (still require 3 items after extract). */
+function extractSuggestionsArray(payload: unknown): RawSuggestion[] | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const obj = payload as Record<string, unknown>;
+  const pick = (value: unknown): RawSuggestion[] | null => {
+    if (!Array.isArray(value)) return null;
+    if (!value.every((item) => item && typeof item === 'object' && !Array.isArray(item))) return null;
+    return value as RawSuggestion[];
+  };
+  return (
+    pick(obj.suggestions) ??
+    pick(obj.suggestion) ??
+    (obj.data && typeof obj.data === 'object'
+      ? pick((obj.data as Record<string, unknown>).suggestions)
+      : null) ??
+    (obj.result && typeof obj.result === 'object'
+      ? pick((obj.result as Record<string, unknown>).suggestions)
+      : null)
+  );
+}
 
 export function validateChatSuggestionsInput(payload: unknown): ChatSuggestionsInput {
   if (!payload || typeof payload !== 'object') {
@@ -152,12 +169,14 @@ Profile:
 ${profileSummary}`;
 }
 
-export function normalizeChatSuggestionsResponse(payload: RawSuggestionsResponse): ChatSuggestion[] {
-  if (!payload?.suggestions || !Array.isArray(payload.suggestions) || payload.suggestions.length !== 3) {
+export function normalizeChatSuggestionsResponse(payload: unknown): ChatSuggestion[] {
+  const list = extractSuggestionsArray(payload);
+  if (!list || list.length < 3) {
     throw new Error('Expected exactly 3 suggestions.');
   }
+  const suggestions = list.slice(0, 3);
 
-  return payload.suggestions.map((suggestion, index) => {
+  return suggestions.map((suggestion, index) => {
     const title = suggestion.title?.trim();
     const summary = suggestion.summary?.trim();
     const seedText = suggestion.seedText?.trim();
@@ -177,8 +196,32 @@ export function normalizeChatSuggestionsResponse(payload: RawSuggestionsResponse
   });
 }
 
+function buildRepairPrompt(input: ChatSuggestionsInput, badPayload: unknown) {
+  const snippet =
+    typeof badPayload === 'object' && badPayload !== null
+      ? JSON.stringify(badPayload).slice(0, 3500)
+      : String(badPayload).slice(0, 500);
+  return `Your last JSON was invalid for our parser: we need exactly 3 objects in a top-level "suggestions" array.
+
+Return ONLY valid JSON (no markdown fences) with this exact shape:
+{"suggestions":[{"title":"...","topic":"one allowed topic slug","summary":"...","seedText":"..."},{"title":"...","topic":"...","summary":"...","seedText":"..."},{"title":"...","topic":"...","summary":"...","seedText":"..."}]}
+
+Allowed topic values: ${CULTURAL_TOPICS.join(', ')}.
+
+User question:
+${input.question}
+
+Broken or partial output to fix:
+${snippet}`;
+}
+
 export async function getChatSuggestions(input: ChatSuggestionsInput) {
   const prompt = buildChatSuggestionsPrompt(input);
-  const response = await getJsonFromGroq<RawSuggestionsResponse>(prompt);
-  return normalizeChatSuggestionsResponse(response);
+  let parsed: unknown = await getJsonFromGroq(prompt);
+  try {
+    return normalizeChatSuggestionsResponse(parsed);
+  } catch {
+    parsed = await getJsonFromGroq(buildRepairPrompt(input, parsed));
+    return normalizeChatSuggestionsResponse(parsed);
+  }
 }

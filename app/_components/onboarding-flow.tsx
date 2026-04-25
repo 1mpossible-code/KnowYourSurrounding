@@ -373,7 +373,7 @@ export function OnboardingFlow() {
         ...data.profile,
         exists: true,
       };
-      const starterGuides = selectStarterGuides(profile.wantsHelpWith).slice(0, 3);
+      const starterGuides = selectStarterGuides(profile.wantsHelpWith).slice(0, 1);
       const storedJobs: Array<{ specId: string; jobId: string }> = [];
 
       for (const spec of starterGuides) {

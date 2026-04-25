@@ -1,5 +1,5 @@
 import { ModuleJob, ModuleJobInput } from '@/lib/cultural-orientation';
-import { isSupabaseJobsEnabled, loadJob, loadRecentJobs, saveJob } from '@/lib/supabase-jobs';
+import { isSupabaseJobsEnabled, loadJob, loadJobsByIds, loadRecentJobs, saveJob } from '@/lib/supabase-jobs';
 
 export type JobEvent =
   | { type: 'status'; status: ModuleJob['status']; progress: number }
@@ -56,6 +56,22 @@ export async function listJobs(limit = 12) {
   return Array.from(store.jobs.values())
     .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
     .slice(0, limit);
+}
+
+export async function listJobsByIds(ids: string[]) {
+  if (ids.length === 0) return [];
+
+  const cached = ids.map((id) => store.jobs.get(id)).filter((job): job is ModuleJob => Boolean(job));
+  const missingIds = ids.filter((id) => !cached.some((job) => job.id === id));
+
+  if (missingIds.length > 0) {
+    const persistedJobs = await loadJobsByIds(missingIds);
+    persistedJobs.forEach(hydrateJob);
+    cached.push(...persistedJobs);
+  }
+
+  const byId = new Map(cached.map((job) => [job.id, job]));
+  return ids.map((id) => byId.get(id)).filter((job): job is ModuleJob => Boolean(job));
 }
 
 export async function updateJob(id: string, patch: Partial<ModuleJob>) {
