@@ -52,3 +52,22 @@ Allowed learning styles:
 `quick_rules`, `step_by_step`, `real_life_examples`, `scenario_practice`, `checklists`.
 
 The backend should validate these values before writing to Supabase.
+
+## Color Scheme
+
+:root {
+  --regal-navy: #0d3b66;
+  --lemon-chiffon: #faf0ca;
+  --royal-gold: #f4d35e;
+  --sandy-brown: #ee964b;
+  --tomato: #f95738;
+}
+
+### Usage
+
+--regal-navy: primary text, headers, structure
+--lemon-chiffon: background, cards
+--royal-gold: primary actions, highlights
+--sandy-brown: secondary accents, hover states
+--tomato: errors and warnings only
+
