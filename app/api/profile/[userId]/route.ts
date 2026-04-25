@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 
 import { validateProfilePatch } from '@/lib/cultural-orientation';
+import { normalizeUserId } from '@/lib/profile-api';
 import { fetchProfileByUserId, isSupabaseProfilesEnabled, upsertProfileByUserId } from '@/lib/supabase-profiles';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-const MAX_USER_ID_LEN = 256;
 
 function jsonResponse(data: unknown, status = 200) {
   return NextResponse.json(data, {
@@ -18,14 +17,6 @@ function jsonResponse(data: unknown, status = 200) {
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
-}
-
-function normalizeUserId(raw: string) {
-  const userId = decodeURIComponent(raw).trim();
-  if (!userId || userId.length > MAX_USER_ID_LEN) {
-    return null;
-  }
-  return userId;
 }
 
 export async function GET(_request: Request, context: { params: Promise<{ userId: string }> }) {

@@ -7,6 +7,7 @@ import {
   isTopic,
   ProfilePatchInput,
 } from '@/lib/cultural-orientation';
+import { emptyProfileResponse, ProfileResponse } from '@/lib/profile-api';
 
 const TABLE = 'cultural_orientation_profiles';
 
@@ -25,21 +26,6 @@ export type ProfileRow = {
   updated_at: string;
 };
 
-export type ProfileResponse = {
-  exists: boolean;
-  id?: string;
-  userId: string;
-  originCountry: string | null;
-  destinationCountry: string | null;
-  languageLevel: LanguageLevel | null;
-  priorityTopics: CulturalTopic[];
-  preferredLearningStyle: LearningStyle | null;
-  wantsHelpWith: string[];
-  avoidTopics: string[];
-  savedJobIds: string[];
-  createdAt?: string;
-  updatedAt?: string;
-};
 
 function getBaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -96,21 +82,6 @@ function rowToResponse(row: ProfileRow): ProfileResponse {
 
 export function isSupabaseProfilesEnabled() {
   return Boolean(getBaseConfig());
-}
-
-export function emptyProfileResponse(userId: string): ProfileResponse {
-  return {
-    exists: false,
-    userId,
-    originCountry: null,
-    destinationCountry: null,
-    languageLevel: null,
-    priorityTopics: [],
-    preferredLearningStyle: null,
-    wantsHelpWith: [],
-    avoidTopics: [],
-    savedJobIds: [],
-  };
 }
 
 export async function fetchProfileByUserId(userId: string) {

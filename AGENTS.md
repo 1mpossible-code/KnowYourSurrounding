@@ -34,6 +34,11 @@ No real auth is required for the demo. `user_id` should come from localStorage o
 - `PATCH /api/profile/[userId]` — upsert onboarding fields only (does not replace favorites unless you omit them from merge; server merges with existing row)
 - `POST /api/profile/[userId]/favorites` — body `{ "jobId": "<uuid>", "action": "add" | "remove" }` for favorites; `add` requires the job to exist and be `completed`
 
+**Chat suggestion API:**
+- `POST /api/chat/suggestions` — synchronous Groq-backed endpoint for the chatbot popup; returns exactly 3 module suggestions for a user question
+- Request supports `question` (required) plus optional `contextText`, `feedback`, `previousSuggestions`, and `profile`
+- This endpoint is only for proposing directions; once the user clicks one, feed its `seedText` into the existing module-generation workflow
+
 ### `cultural_orientation_modules` (optional)
 
 Legacy or curated catalog of reusable modules. **Product flows can rely entirely on generation jobs** (`cultural_orientation_generation_jobs`) plus profile `saved_generation_job_ids` for user-specific content—no need to write canonical modules unless you want a shared library.
