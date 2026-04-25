@@ -61,6 +61,10 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [busy, setBusy] = useState(false);
   const [favoriteBusy, setFavoriteBusy] = useState(false);
+  const [chatQuestion, setChatQuestion] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
+  const [chatError, setChatError] = useState('');
+  const [chatSuggestions, setChatSuggestions] = useState<ChatSuggestion[]>([]);
   const articleRef = useRef<HTMLDivElement | null>(null);
   const sourceRef = useRef<EventSource | null>(null);
   const attachedJobIdRef = useRef<string | null>(null);
@@ -76,19 +80,26 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
     let cursor: LocalModuleStage | undefined = activeStage;
 
     while (cursor) {
-      path.push(cursor);
+      if (!isRootStage(cursor)) {
+        path.push(cursor);
+      }
       cursor = cursor.parentStageId ? byId.get(cursor.parentStageId) : undefined;
-    }
-
-    if (!path.some((stage) => isRootStage(stage))) {
-      const rootStage = workspace.stages.find(isRootStage);
-      if (rootStage) path.push(rootStage);
     }
 
     return path;
   }, [activeStage, workspace.stages]);
 
   const rootPath = getModuleStagePath(topic);
+  const currentDepth = useMemo(() => {
+    let depth = 0;
+    let cursor: LocalModuleStage | undefined = activeStage;
+    const byId = new Map(workspace.stages.map((stage) => [stage.id, stage]));
+    while (cursor?.parentStageId) {
+      depth += 1;
+      cursor = byId.get(cursor.parentStageId);
+    }
+    return depth;
+  }, [activeStage, workspace.stages]);
 
   const patchStageAndPersist = useCallback((stageId: string, patch: Partial<LocalModuleStage>) => {
     setWorkspace((current) => {
@@ -325,10 +336,10 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
     });
   }, [activeStage, attachToJob, initialStageId, profile, startGenerationForStage]);
 
-  const openBranchPage = useCallback((selectedText: string) => {
+  const openBranchPage = useCallback((selectedText: string, preferredTitle?: string) => {
     if (!activeStage || !selectedText.trim()) return;
 
-    const title = inferTitle(selectedText, activeStage.title || TOPIC_LABELS[topic]);
+    const title = preferredTitle || inferTitle(selectedText, activeStage.title || TOPIC_LABELS[topic]);
     const base = trimWorkspaceToStage(workspace, activeStage.id);
     const stage = createQueuedStage(topic, title, selectedText, undefined, activeStage.id);
     const next = upsertWorkspaceStage(base, stage);
@@ -420,7 +431,7 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
                     History
                   </button>
                   <div className="rounded-full border-2 border-white/80 bg-white/14 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm">
-                    {busy ? 'Generating now' : isRootStage(activeStage) ? 'Root page' : 'Focused page'}
+                    {busy ? 'Generating now' : `Depth ${currentDepth}`}
                   </div>
                 </div>
               </div>
@@ -469,7 +480,7 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
                 {isRootStage(activeStage) ? (
                   <div className="space-y-3 text-sm leading-7 opacity-80 md:text-base">
                     <p>There is no note here yet.</p>
-                    <p>Go back to the shelves, use the chat agent, and we’ll create the first focused note page for this topic automatically.</p>
+                    <p>Go back to the essentials picker or your favorites, and start a focused note page from there.</p>
                   </div>
                 ) : activeStage.text ? (
                   <MarkdownRenderer content={activeStage.text} />
@@ -481,41 +492,116 @@ export function ModuleWorkspace({ topic, initialStageId }: { topic: CulturalTopi
                 )}
               </div>
             </div>
+
+            {!isRootStage(activeStage) ? (
+              <section className="rounded-[1.4rem] border-2 border-[var(--regal-navy)] bg-white p-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--sandy-brown)] md:text-sm">Follow-up chat</p>
+                  <h3 className="mt-2 text-xl font-black md:text-2xl">Ask for the next angle</h3>
+                  <p className="mt-2 text-sm leading-6 opacity-80 md:text-base">
+                    Ask naturally. We’ll suggest three sharp follow-ups for this exact note, and clicking one starts the next module immediately.
+                  </p>
+                </div>
+                <form
+                  className="mt-4 space-y-4"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (!chatQuestion.trim() || !profile) return;
+                    setChatBusy(true);
+                    setChatError('');
+                    fetch('/api/chat/suggestions', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        question: chatQuestion,
+                        contextText: activeStage.text,
+                        feedback: 'Keep the module tightly focused on the selected follow-up angle and keep the title stable if chosen.',
+                        profile,
+                        previousSuggestions: chatSuggestions.map(({ title, topic }) => ({ title, topic })),
+                      }),
+                    })
+                      .then(async (response) => {
+                        const data = await response.json();
+                        if (!response.ok) throw new Error(data.error || 'Failed to fetch suggestions.');
+                        setChatSuggestions(data.suggestions || []);
+                      })
+                      .catch((error) => {
+                        setChatError(error instanceof Error ? error.message : 'Failed to fetch suggestions.');
+                      })
+                      .finally(() => setChatBusy(false));
+                  }}
+                >
+                  <textarea
+                    value={chatQuestion}
+                    onChange={(event) => setChatQuestion(event.target.value)}
+                    placeholder="Example: explain reloadable cards more practically for someone new to the city"
+                    className="min-h-[110px] w-full rounded-[1.2rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 text-sm leading-6 outline-none focus:border-[var(--sandy-brown)]"
+                  />
+                  {chatError ? <p className="rounded-[1.2rem] border-2 border-[var(--tomato)] bg-white px-4 py-3 text-[var(--tomato)]">{chatError}</p> : null}
+                  <button
+                    type="submit"
+                    disabled={chatBusy || !chatQuestion.trim()}
+                    className="rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-3 font-bold disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {chatBusy ? 'Thinking of follow-ups…' : 'Get follow-up suggestions'}
+                  </button>
+                </form>
+
+                <div className="mt-4 space-y-3">
+                  {chatSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion.id}
+                      type="button"
+                      onClick={() => openBranchPage(suggestion.seedText, suggestion.title)}
+                      className="block w-full rounded-[1.2rem] border-2 border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 text-left"
+                    >
+                      <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">Suggested follow-up</div>
+                      <div className="mt-2 text-base font-black leading-6">{suggestion.title}</div>
+                      <div className="mt-2 text-sm leading-6 opacity-80">{suggestion.summary}</div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ) : null}
           </section>
         </div>
       </main>
 
       <PopupPanel open={historyOpen} onClose={() => setHistoryOpen(false)} eyebrow="History" title="Current path only">
-        <div className="space-y-3">
-          {historyStages.map((stage, index) => {
-            const active = stage.id === activeStage.id;
-            return (
-              <button
-                key={stage.id}
-                type="button"
-                onClick={() => openHistoryStage(stage)}
-                className={`block w-full rounded-[1.35rem] border-2 p-4 text-left ${
-                  active ? 'border-[var(--regal-navy)] bg-[var(--royal-gold)]' : 'border-[var(--regal-navy)] bg-[var(--lemon-chiffon)]'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">
-                      {isRootStage(stage) ? 'Root page' : `Depth ${index + 1}`}
+        {historyStages.length === 0 ? (
+          <div className="rounded-[1.2rem] border-2 border-dashed border-[var(--regal-navy)] bg-[var(--lemon-chiffon)] p-4 text-sm leading-6 opacity-80">
+            History is empty.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {historyStages.map((stage, index) => {
+              const active = stage.id === activeStage.id;
+              return (
+                <button
+                  key={stage.id}
+                  type="button"
+                  onClick={() => openHistoryStage(stage)}
+                  className={`block w-full rounded-[1.35rem] border-2 p-4 text-left ${
+                    active ? 'border-[var(--regal-navy)] bg-[var(--royal-gold)]' : 'border-[var(--regal-navy)] bg-[var(--lemon-chiffon)]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--sandy-brown)]">Depth {index + 1}</div>
+                      <div className="mt-1 text-base font-black leading-6">{stage.title}</div>
+                      <div className="mt-1 text-sm leading-6 opacity-80">
+                        {stage.seedText ? `${stage.seedText.slice(0, 120)}${stage.seedText.length > 120 ? '…' : ''}` : 'Focused follow-up'}
+                      </div>
                     </div>
-                    <div className="mt-1 text-base font-black leading-6">{stage.title}</div>
-                    <div className="mt-1 text-sm leading-6 opacity-80">
-                      {stage.seedText ? `${stage.seedText.slice(0, 120)}${stage.seedText.length > 120 ? '…' : ''}` : 'Blank starting point'}
+                    <div className={`rounded-full border-2 border-[var(--regal-navy)] px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] ${statusTone(stage.status)}`}>
+                      {stage.status}
                     </div>
                   </div>
-                  <div className={`rounded-full border-2 border-[var(--regal-navy)] px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] ${statusTone(stage.status)}`}>
-                    {stage.status}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </PopupPanel>
     </>
   );

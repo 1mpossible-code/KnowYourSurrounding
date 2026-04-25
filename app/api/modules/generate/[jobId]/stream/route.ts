@@ -17,6 +17,15 @@ export async function GET(_request: Request, context: { params: Promise<{ jobId:
 
   const stream = new ReadableStream({
     start(controller) {
+      let closed = false;
+      const closeStream = () => {
+        if (closed) return;
+        closed = true;
+        clearInterval(interval);
+        unsubscribe();
+        controller.close();
+      };
+
       controller.enqueue(encode('status', {
         jobId: job.id,
         status: job.status,
@@ -27,20 +36,24 @@ export async function GET(_request: Request, context: { params: Promise<{ jobId:
       }));
 
       const unsubscribe = subscribe(jobId, (event) => {
+        if (closed) return;
         controller.enqueue(encode(event.type, event));
         if (event.type === 'completed' || event.type === 'failed') {
-          unsubscribe();
-          controller.close();
+          closeStream();
         }
       });
 
       const interval = setInterval(() => {
-        controller.enqueue(': keep-alive\n\n');
+        if (closed) return;
+        try {
+          controller.enqueue(': keep-alive\n\n');
+        } catch {
+          closeStream();
+        }
       }, 15000);
 
       return () => {
-        clearInterval(interval);
-        unsubscribe();
+        closeStream();
       };
     },
     cancel() {

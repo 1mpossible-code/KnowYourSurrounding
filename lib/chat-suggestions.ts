@@ -150,6 +150,7 @@ Rules:
 - If feedback exists, refine accordingly.
 - If previous suggestions exist, avoid repeating them too closely.
 - Keep each suggestion meaningfully different.
+- The title must be production-ready and stable because, if chosen, it becomes the final module title.
 - seedText should be a strong starter passage for a future cultural orientation module.
 - Do not wrap the response in markdown.
 
