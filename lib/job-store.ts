@@ -11,12 +11,20 @@ type Listener = (event: JobEvent) => void;
 type Store = {
   jobs: Map<string, ModuleJob>;
   listeners: Map<string, Set<Listener>>;
+  mutations: Map<string, Promise<ModuleJob | undefined>>;
 };
 
-const globalStore = globalThis as typeof globalThis & { __moduleJobStore__?: Store };
-const store = globalStore.__moduleJobStore__ ?? {
-  jobs: new Map<string, ModuleJob>(),
-  listeners: new Map<string, Set<Listener>>(),
+const globalStore = globalThis as typeof globalThis & {
+  __moduleJobStore__?: Partial<Store>;
+};
+
+const existingStore = globalStore.__moduleJobStore__;
+const store: Store = {
+  jobs: existingStore?.jobs instanceof Map ? existingStore.jobs as Map<string, ModuleJob> : new Map<string, ModuleJob>(),
+  listeners: existingStore?.listeners instanceof Map ? existingStore.listeners as Map<string, Set<Listener>> : new Map<string, Set<Listener>>(),
+  mutations: existingStore?.mutations instanceof Map
+    ? existingStore.mutations as Map<string, Promise<ModuleJob | undefined>>
+    : new Map<string, Promise<ModuleJob | undefined>>(),
 };
 globalStore.__moduleJobStore__ = store;
 
@@ -75,23 +83,29 @@ export async function listJobsByIds(ids: string[]) {
 }
 
 export async function updateJob(id: string, patch: Partial<ModuleJob>) {
-  const current = await getJob(id);
-  if (!current) return undefined;
+  return runJobMutation(id, async () => {
+    const current = await getJob(id);
+    if (!current) return undefined;
 
-  const next: ModuleJob = {
-    ...current,
-    ...patch,
-    updatedAt: new Date().toISOString(),
-  };
-  hydrateJob(next);
+    if (isTerminalStatus(current.status) && !isTerminalPatch(patch)) {
+      return current;
+    }
 
-  if (patch.status) emit(id, { type: 'status', status: next.status, progress: next.progress });
-  if (typeof patch.partialText === 'string') emit(id, { type: 'partial', partialText: next.partialText, progress: next.progress });
-  if (patch.module) emit(id, { type: 'completed', module: patch.module });
-  if (patch.error) emit(id, { type: 'failed', error: patch.error });
+    const next: ModuleJob = {
+      ...current,
+      ...patch,
+      updatedAt: new Date().toISOString(),
+    };
+    hydrateJob(next);
 
-  await persist(next);
-  return next;
+    if (patch.status) emit(id, { type: 'status', status: next.status, progress: next.progress });
+    if (typeof patch.partialText === 'string') emit(id, { type: 'partial', partialText: next.partialText, progress: next.progress });
+    if (patch.module) emit(id, { type: 'completed', module: patch.module });
+    if (patch.error) emit(id, { type: 'failed', error: patch.error });
+
+    await persist(next);
+    return next;
+  });
 }
 
 export function subscribe(id: string, listener: Listener) {
@@ -122,4 +136,28 @@ function emit(id: string, event: JobEvent) {
   const listeners = store.listeners.get(id);
   if (!listeners) return;
   for (const listener of listeners) listener(event);
+}
+
+function isTerminalStatus(status: ModuleJob['status']) {
+  return status === 'completed' || status === 'failed';
+}
+
+function isTerminalPatch(patch: Partial<ModuleJob>) {
+  return patch.status === 'completed' || patch.status === 'failed' || Boolean(patch.module) || Boolean(patch.error);
+}
+
+function runJobMutation(id: string, mutation: () => Promise<ModuleJob | undefined>) {
+  const previous = store.mutations.get(id) ?? Promise.resolve(undefined);
+  const next = previous
+    .catch(() => undefined)
+    .then(mutation);
+
+  store.mutations.set(id, next);
+  void next.finally(() => {
+    if (store.mutations.get(id) === next) {
+      store.mutations.delete(id);
+    }
+  });
+
+  return next;
 }

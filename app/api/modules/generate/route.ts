@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { createJob } from '@/lib/job-store';
 import { validateInput } from '@/lib/cultural-orientation';
-import { generateModuleForJob } from '@/lib/module-generation';
+import { ensureModuleGenerationStarted } from '@/lib/module-generation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const payload = validateInput(await request.json());
     const jobId = crypto.randomUUID();
     await createJob(jobId, payload);
-    void generateModuleForJob(jobId);
+    await ensureModuleGenerationStarted(jobId);
     return jsonResponse({ jobId, status: 'queued' }, 202);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Invalid request.';

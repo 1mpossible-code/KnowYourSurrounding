@@ -14,9 +14,29 @@ type MetadataResponse = {
   topic?: string;
 };
 
+const globalGenerationState = globalThis as typeof globalThis & {
+  __moduleGenerationInflight__?: Set<string>;
+};
+const inflightJobs = globalGenerationState.__moduleGenerationInflight__ ?? new Set<string>();
+globalGenerationState.__moduleGenerationInflight__ = inflightJobs;
+
+export async function ensureModuleGenerationStarted(jobId: string) {
+  if (inflightJobs.has(jobId)) return;
+
+  const job = await getJob(jobId);
+  if (!job || job.status === 'generating' || job.status === 'completed' || job.status === 'failed') {
+    return;
+  }
+
+  inflightJobs.add(jobId);
+  void generateModuleForJob(jobId).finally(() => {
+    inflightJobs.delete(jobId);
+  });
+}
+
 export async function generateModuleForJob(jobId: string) {
   const job = await getJob(jobId);
-  if (!job || job.status === 'generating' || job.status === 'completed') return;
+  if (!job || job.status === 'generating' || job.status === 'completed' || job.status === 'failed') return;
 
   await updateJob(jobId, { status: 'generating', progress: 5 });
   const prompt = buildPrompt(job.input);
@@ -37,8 +57,7 @@ export async function generateModuleForJob(jobId: string) {
       () => ({}) as MetadataResponse,
     );
     const input = job.input;
-    const title =
-      input.titleHint?.trim() || metadata.title?.trim() || deriveTitleFromMarkdown(cleanMarkdown);
+    const title = input.titleHint?.trim() || metadata.title?.trim() || deriveTitleFromMarkdown(cleanMarkdown);
     const topic = input.lockedTopic ?? coerceTopic(metadata.topic || '', `${title}\n${cleanMarkdown}`);
     const generatedModule = createModule(title, topic, cleanMarkdown);
 

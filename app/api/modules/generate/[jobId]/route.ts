@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { getJob } from '@/lib/job-store';
+import { ensureModuleGenerationStarted } from '@/lib/module-generation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,7 @@ function jsonResponse(data: unknown, status = 200) {
 
 export async function GET(_request: Request, context: { params: Promise<{ jobId: string }> }) {
   const { jobId } = await context.params;
+  await ensureModuleGenerationStarted(jobId);
   const job = await getJob(jobId);
   if (!job) {
     return jsonResponse({ error: 'Job not found.' }, 404);
