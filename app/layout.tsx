@@ -21,11 +21,14 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: 'Amparo',
   description: 'Cultural orientation guidance tailored to your route, language comfort, and priorities.',
-  // Provide multiple icon fallbacks so browsers and platforms pick up a proper favicon / PWA icon
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/icon-192x192.png', type: 'image/png', sizes: '192x192' },
+    ],
     shortcut: '/favicon.ico',
-    apple: '/icon-192x192.png',
+    apple: '/apple-touch-icon.png',
   },
 };
 
