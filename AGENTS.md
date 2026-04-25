@@ -15,6 +15,7 @@ Stores one onboarding profile per demo user.
 This table represents the user’s cultural orientation preferences and personalization context.
 
 Fields:
+
 - `id`: UUID primary key
 - `user_id`: text ID from localStorage/demo user, unique
 - `origin_country`: where the user is coming from
@@ -34,6 +35,7 @@ No real auth is required for the demo. `user_id` should come from localStorage o
 Stores cultural orientation learning modules.
 
 Each module has:
+
 - `id`: UUID primary key
 - `title`: module title
 - `topic`: one cultural topic only
@@ -70,4 +72,3 @@ The backend should validate these values before writing to Supabase.
 --royal-gold: primary actions, highlights
 --sandy-brown: secondary accents, hover states
 --tomato: errors and warnings only
-
