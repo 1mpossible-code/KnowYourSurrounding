@@ -36,8 +36,10 @@ export async function generateModuleForJob(jobId: string) {
     const metadata = await getJsonFromGroq<MetadataResponse>(buildMetadataPrompt(cleanMarkdown)).catch(
       () => ({}) as MetadataResponse,
     );
-    const title = metadata.title?.trim() || deriveTitleFromMarkdown(cleanMarkdown);
-    const topic = coerceTopic(metadata.topic || '', `${title}\n${cleanMarkdown}`);
+    const input = job.input;
+    const title =
+      input.titleHint?.trim() || metadata.title?.trim() || deriveTitleFromMarkdown(cleanMarkdown);
+    const topic = input.lockedTopic ?? coerceTopic(metadata.topic || '', `${title}\n${cleanMarkdown}`);
     const generatedModule = createModule(title, topic, cleanMarkdown);
 
     await updateJob(jobId, {

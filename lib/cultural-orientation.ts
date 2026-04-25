@@ -96,6 +96,10 @@ export type ModuleJobInput = {
   highlightedText: string;
   contextText?: string;
   profile?: ProfileInput;
+  /** When set, the saved module must use this topic (starter packs, fixed curricula). */
+  lockedTopic?: CulturalTopic;
+  /** When set (often with lockedTopic), prefer this title in the generated module. */
+  titleHint?: string;
 };
 
 export type GeneratedModule = {
@@ -156,11 +160,24 @@ export function validateInput(payload: unknown): ModuleJobInput {
     ? validateProfile(data.profile as Record<string, unknown>)
     : undefined;
 
+  let lockedTopic: CulturalTopic | undefined;
+  if (data.lockedTopic !== undefined && data.lockedTopic !== null) {
+    if (typeof data.lockedTopic === 'string' && isTopic(data.lockedTopic.trim())) {
+      lockedTopic = data.lockedTopic.trim() as CulturalTopic;
+    } else {
+      throw new Error('lockedTopic must be a valid cultural topic.');
+    }
+  }
+
+  const titleHint = typeof data.titleHint === 'string' && data.titleHint.trim() ? data.titleHint.trim() : undefined;
+
   return {
     userId: typeof data.userId === 'string' ? data.userId.trim() : undefined,
     highlightedText,
     contextText: typeof data.contextText === 'string' ? data.contextText.trim() : undefined,
     profile,
+    lockedTopic,
+    titleHint,
   };
 }
 
@@ -324,6 +341,10 @@ export function buildPrompt(input: ModuleJobInput) {
     ? `Context article/source:\n${input.contextText}`
     : 'No surrounding article context was supplied.';
 
+  const topicLock = input.lockedTopic
+    ? `Critical: this module must focus on the cultural topic "${input.lockedTopic}" only. Every section should clearly relate to that topic. Do not switch to a different topic.`
+    : '';
+
   return `You are creating a cultural orientation learning module.
 
 Your task:
@@ -334,7 +355,7 @@ Your task:
 - The final module text must be valid Markdown.
 - Aim for about ${targetWords} words.
 - Do not mention these instructions.
-
+${topicLock ? `${topicLock}\n` : ''}
 Allowed topics: ${CULTURAL_TOPICS.join(', ')}.
 
 Highlighted text:\n${input.highlightedText}

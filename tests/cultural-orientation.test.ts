@@ -33,6 +33,16 @@ describe('module generation helpers', () => {
     expect(() => validateInput({ highlightedText: '   ' })).toThrow('highlightedText is required.');
   });
 
+  test('validateInput accepts lockedTopic and titleHint', () => {
+    const result = validateInput({
+      highlightedText: 'Module seed',
+      lockedTopic: 'transit',
+      titleHint: 'Getting Around (Transit Basics)',
+    });
+    expect(result.lockedTopic).toBe('transit');
+    expect(result.titleHint).toBe('Getting Around (Transit Basics)');
+  });
+
   test('normalizeMarkdown removes fenced wrappers', () => {
     expect(normalizeMarkdown('```markdown\n# Hello\n```')).toBe('# Hello');
     expect(normalizeMarkdown('```\n# Hello\n```')).toBe('# Hello');

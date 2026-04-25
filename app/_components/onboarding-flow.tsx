@@ -18,6 +18,8 @@ import {
   TOPIC_OPTIONS,
   getSelectedLabels,
 } from '@/lib/onboarding';
+import { emptyProfileResponse } from '@/lib/profile-api';
+import { buildStarterModulePayload, selectStarterGuides, writeStoredStarterGuideJobs } from '@/lib/starter-modules';
 
 const STEPS = [
   {
@@ -357,13 +359,39 @@ export function OnboardingFlow() {
 
     try {
       const userId = draftUserId || window.crypto.randomUUID();
+      const patch = buildProfilePatchFromOnboarding(form);
       const response = await fetch(`/api/profile/${encodeURIComponent(userId)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildProfilePatchFromOnboarding(form)),
+        body: JSON.stringify(patch),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to save your profile.');
+
+      const profile = {
+        ...emptyProfileResponse(userId),
+        ...data.profile,
+        exists: true,
+      };
+      const starterGuides = selectStarterGuides(profile.wantsHelpWith).slice(0, 3);
+      const storedJobs: Array<{ specId: string; jobId: string }> = [];
+
+      for (const spec of starterGuides) {
+        const starterResponse = await fetch('/api/modules/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildStarterModulePayload(profile, userId, spec)),
+        });
+        const starterData = await starterResponse.json();
+        if (!starterResponse.ok) {
+          throw new Error(starterData.error || `Failed to start ${spec.titleHint}.`);
+        }
+        if (starterData.jobId) {
+          storedJobs.push({ specId: spec.id, jobId: starterData.jobId });
+        }
+      }
+
+      writeStoredStarterGuideJobs(storedJobs);
       window.localStorage.setItem(LOCAL_USER_ID_KEY, userId);
       router.replace('/');
     } catch (nextError) {
@@ -418,7 +446,7 @@ export function OnboardingFlow() {
                 disabled={submitting}
                 className="rounded-full border-2 border-[var(--regal-navy)] bg-[var(--royal-gold)] px-5 py-3 font-bold transition hover:bg-[var(--sandy-brown)] disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {submitting ? 'Saving your profile…' : 'Finish and open my home'}
+                {submitting ? 'Creating your profile and first guides…' : 'Make my profile'}
               </button>
             ) : (
               <button

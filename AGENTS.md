@@ -40,6 +40,8 @@ No real auth is required for the demo. `user_id` should come from localStorage o
 - Request supports `question` (required) plus optional `contextText`, `feedback`, `previousSuggestions`, and `profile`
 - This endpoint is only for proposing directions; once the user clicks one, feed its `seedText` into the existing module-generation workflow
 
+**Module generation request (`POST /api/modules/generate`):** optional `lockedTopic` (one allowed cultural topic) and `titleHint` to pin topic/title for curated flows (e.g. the three home “starter guides” after onboarding).
+
 ### `cultural_orientation_modules` (optional)
 
 Legacy or curated catalog of reusable modules. **Product flows can rely entirely on generation jobs** (`cultural_orientation_generation_jobs`) plus profile `saved_modules` (favorite job UUIDs) for user-specific content—no need to write canonical modules unless you want a shared library.

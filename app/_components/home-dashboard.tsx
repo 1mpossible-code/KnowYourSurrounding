@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { StarterGuidesPanel } from './starter-guides-panel';
 import {
   getAvoidSelectionLabels,
   getHelpSelectionLabels,
@@ -78,6 +79,8 @@ function ProfileSummary({ profile, onReset }: { profile: ProfileResponse; onRese
             <StatCard label="Saved guides" value={`${profile.savedJobIds.length} favorited`} />
           </div>
         </section>
+
+        <StarterGuidesPanel profile={profile} />
 
         <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
           <article className="rounded-[2rem] border-4 border-[var(--regal-navy)] bg-white p-6 shadow-[12px_12px_0_var(--sandy-brown)]">
