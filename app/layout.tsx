@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Know Your Surroundings',
+  title: 'Amparo',
   description: 'Cultural orientation guidance tailored to the user’s route, language comfort, and priorities.',
 };
 

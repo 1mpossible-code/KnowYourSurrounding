@@ -384,7 +384,7 @@ export function HomeDashboard() {
           <section className="rounded-[1.85rem] border-4 border-[var(--regal-navy)] bg-white p-4 shadow-[10px_10px_0_var(--royal-gold)] md:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="max-w-2xl">
-                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">Know Your Surroundings</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-[var(--sandy-brown)]">Amparo</p>
                 <h1 className="mt-3 text-3xl font-black leading-tight md:text-5xl">Clean shelves, deeper notes only when you need them</h1>
                 <p className="mt-4 text-sm leading-6 opacity-80 md:text-base md:leading-7">
                   Start from an essential topic or the chat agent. Only notes you explicitly save stay on the shelf.

@@ -1,8 +1,8 @@
 import { CulturalTopic, isTopic } from '@/lib/cultural-orientation';
 
-export const MODULE_WORKSPACES_KEY = 'kys-module-workspaces';
-export const PENDING_BRANCHES_KEY = 'kys-pending-module-branches';
-export const EXPERIMENTAL_UNLOCK_KEY = 'kys-experimental-unlocked';
+export const MODULE_WORKSPACES_KEY = 'amparo-module-workspaces';
+export const PENDING_BRANCHES_KEY = 'amparo-pending-module-branches';
+export const EXPERIMENTAL_UNLOCK_KEY = 'amparo-experimental-unlocked';
 
 export type LocalModuleStageStatus = 'blank' | 'queued' | 'generating' | 'completed' | 'failed';
 

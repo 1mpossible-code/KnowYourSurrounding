@@ -12,7 +12,7 @@ import {
   WantsHelpSituation,
 } from '@/lib/cultural-orientation';
 
-export const LOCAL_USER_ID_KEY = 'kys-demo-user-id';
+export const LOCAL_USER_ID_KEY = 'amparo-demo-user-id';
 
 export const COUNTRY_OPTIONS = [
   'Argentina', 'Australia', 'Austria', 'Belgium', 'Brazil', 'Bulgaria', 'Canada', 'Chile', 'China', 'Colombia',

@@ -2,7 +2,7 @@ import type { WantsHelpSituation, CulturalTopic } from '@/lib/cultural-orientati
 import type { ProfileResponse } from '@/lib/profile-api';
 
 /** Persisted in localStorage after onboarding starts the starter guide jobs. */
-export const STARTER_JOB_IDS_KEY = 'kys-starter-guide-jobs';
+export const STARTER_JOB_IDS_KEY = 'amparo-starter-guide-jobs';
 
 export type StarterGuideSpec = {
   id: string;

@@ -27,13 +27,16 @@
 html,
 body {
   overflow-x: hidden;
+  overflow-y: auto;
+  height: auto;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), "Segoe UI", sans-serif;
-  overscroll-behavior: none;
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 ::selection {

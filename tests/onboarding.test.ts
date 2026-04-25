@@ -37,6 +37,6 @@ describe('onboarding helpers', () => {
   });
 
   test('local storage key is stable', () => {
-    expect(LOCAL_USER_ID_KEY).toBe('kys-demo-user-id');
+    expect(LOCAL_USER_ID_KEY).toBe('amparo-demo-user-id');
   });
 });
