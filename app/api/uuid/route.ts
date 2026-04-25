@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     const ids: string[] = [];
     for (let i = 0; i < count; i++) ids.push(crypto.randomUUID());
     return jsonResponse({ ids });
-  } catch (err) {
+  } catch {
     return jsonResponse({ error: 'Invalid request' }, 400);
   }
 }

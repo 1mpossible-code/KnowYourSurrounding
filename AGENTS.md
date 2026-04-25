@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Data Model: Cultural Orientation
 
-The backend uses two main Supabase tables:
+The backend uses three main Supabase tables:
 
 ### `cultural_orientation_profiles`
 
@@ -41,6 +41,33 @@ Each module has:
 - `created_at`, `updated_at`: timestamps
 
 Each module belongs to exactly one topic.
+
+### `cultural_orientation_generation_jobs`
+
+Stores AI generation jobs for highlighted text -> cultural orientation module workflows.
+
+Use this table for durable polling/streaming job state. Generated drafts can live here even if they are not promoted to `cultural_orientation_modules`.
+
+Fields:
+- `id`: UUID primary key for the job
+- `user_id`: optional demo user ID from localStorage
+- `highlighted_text`: required source text selected by the user
+- `context_text`: optional larger article/body context
+- `profile_json`: optional JSON copy of personalization/profile input
+- `status`: `queued`, `generating`, `completed`, or `failed`
+- `progress`: integer 0-100
+- `partial_text`: incrementally generated markdown during streaming
+- `error_message`: nullable failure reason
+- `module_id`: nullable UUID for the generated module payload
+- `title`: nullable generated title
+- `topic`: nullable generated topic, must use allowed topics when present
+- `final_text`: nullable final markdown content
+- `created_at`, `updated_at`: timestamps
+
+Notes:
+- This table is for generation lifecycle state, not frontend chat history.
+- The backend must validate allowed topic/language/learning-style values before persisting profile-derived fields.
+- For demo/dev flows, history rendering can stay in the frontend, but job durability should come from Supabase.
 
 Allowed topics:
 `greetings`, `public_behavior`, `communication`, `personal_space`, `time`, `work`, `school`, `gender`, `religion`, `dating`, `conflict`, `laws`, `money`, `food`, `clothing`, `digital`, `safety`, `healthcare`, `government`, `transit`.
