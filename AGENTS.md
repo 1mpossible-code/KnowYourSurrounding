@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Data Model: Cultural Orientation
 
-The backend uses three main Supabase tables:
+The backend uses these Supabase tables:
 
 ### `cultural_orientation_profiles`
 
@@ -16,7 +16,7 @@ This table represents the user’s cultural orientation preferences and personal
 
 Fields:
 - `id`: UUID primary key
-- `user_id`: text ID from localStorage/demo user, unique
+- `user_id`: text ID from localStorage/demo user, unique (this is the stable id the frontend stores)
 - `origin_country`: where the user is coming from
 - `destination_country`: where the user is adapting to
 - `language_level`: general language comfort level in the destination language
@@ -24,14 +24,19 @@ Fields:
 - `preferred_learning_style`: how the user prefers to learn
 - `wants_help_with`: array of daily-life situations the user wants guidance on
 - `avoid_topics`: optional sensitive topics to avoid
-- `saved_modules`: array of saved cultural module IDs
+- `saved_generation_job_ids`: UUID array of **completed** rows in `cultural_orientation_generation_jobs` the user favorited (not `cultural_orientation_modules` ids)
 - `created_at`, `updated_at`: timestamps
 
 No real auth is required for the demo. `user_id` should come from localStorage on the frontend.
 
-### `cultural_orientation_modules`
+**Profile API (by `user_id`):**
+- `GET /api/profile/[userId]` — load profile; returns `{ profile }` with camelCase fields including `savedJobIds` (empty when no row yet; `profile.exists` is false until first save)
+- `PATCH /api/profile/[userId]` — upsert onboarding fields only (does not replace favorites unless you omit them from merge; server merges with existing row)
+- `POST /api/profile/[userId]/favorites` — body `{ "jobId": "<uuid>", "action": "add" | "remove" }` for favorites; `add` requires the job to exist and be `completed`
 
-Stores cultural orientation learning modules.
+### `cultural_orientation_modules` (optional)
+
+Legacy or curated catalog of reusable modules. **Product flows can rely entirely on generation jobs** (`cultural_orientation_generation_jobs`) plus profile `saved_generation_job_ids` for user-specific content—no need to write canonical modules unless you want a shared library.
 
 Each module has:
 - `id`: UUID primary key
@@ -46,7 +51,7 @@ Each module belongs to exactly one topic.
 
 Stores AI generation jobs for highlighted text -> cultural orientation module workflows.
 
-Use this table for durable polling/streaming job state. Generated drafts can live here even if they are not promoted to `cultural_orientation_modules`.
+Use this table for durable polling/streaming job state. Completed rows hold `title`, `topic`, `final_text` (markdown), etc., and are what the UI should list as “generated modules” / history when combined with the client; favorites reference **`cultural_orientation_generation_jobs.id`**.
 
 Fields:
 - `id`: UUID primary key for the job

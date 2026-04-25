@@ -48,6 +48,17 @@ export type ProfileInput = {
   avoidTopics?: string[];
 };
 
+/** Partial profile update for PATCH /api/profile/[userId] (all keys optional). */
+export type ProfilePatchInput = {
+  originCountry?: string | null;
+  destinationCountry?: string | null;
+  languageLevel?: LanguageLevel | null;
+  preferredLearningStyle?: LearningStyle | null;
+  priorityTopics?: CulturalTopic[];
+  wantsHelpWith?: string[];
+  avoidTopics?: string[];
+};
+
 export type ModuleJobInput = {
   userId?: string;
   highlightedText: string;
@@ -82,6 +93,12 @@ export function isTopic(value: string): value is CulturalTopic {
   return CULTURAL_TOPICS.includes(value as CulturalTopic);
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isUuid(value: string) {
+  return UUID_RE.test(value.trim());
+}
+
 export function validateInput(payload: unknown): ModuleJobInput {
   if (!payload || typeof payload !== 'object') {
     throw new Error('Request body must be a JSON object.');
@@ -103,6 +120,78 @@ export function validateInput(payload: unknown): ModuleJobInput {
     contextText: typeof data.contextText === 'string' ? data.contextText.trim() : undefined,
     profile,
   };
+}
+
+export function validateProfilePatch(payload: unknown): ProfilePatchInput {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('Request body must be a JSON object.');
+  }
+  const data = payload as Record<string, unknown>;
+  const patch: ProfilePatchInput = {};
+
+  if ('originCountry' in data) {
+    patch.originCountry =
+      data.originCountry === null ? null : typeof data.originCountry === 'string' ? data.originCountry.trim() : null;
+  }
+  if ('destinationCountry' in data) {
+    patch.destinationCountry =
+      data.destinationCountry === null
+        ? null
+        : typeof data.destinationCountry === 'string'
+          ? data.destinationCountry.trim()
+          : null;
+  }
+  if ('languageLevel' in data) {
+    if (data.languageLevel === null || data.languageLevel === undefined) {
+      patch.languageLevel = null;
+    } else if (typeof data.languageLevel === 'string' && LANGUAGE_LEVELS.includes(data.languageLevel as LanguageLevel)) {
+      patch.languageLevel = data.languageLevel as LanguageLevel;
+    } else {
+      throw new Error('languageLevel is invalid.');
+    }
+  }
+  if ('preferredLearningStyle' in data) {
+    if (data.preferredLearningStyle === null || data.preferredLearningStyle === undefined) {
+      patch.preferredLearningStyle = null;
+    } else if (
+      typeof data.preferredLearningStyle === 'string' &&
+      LEARNING_STYLES.includes(data.preferredLearningStyle as LearningStyle)
+    ) {
+      patch.preferredLearningStyle = data.preferredLearningStyle as LearningStyle;
+    } else {
+      throw new Error('preferredLearningStyle is invalid.');
+    }
+  }
+  if ('priorityTopics' in data) {
+    const priorityTopics = data.priorityTopics;
+    if (priorityTopics === null || priorityTopics === undefined) {
+      patch.priorityTopics = [];
+    } else if (
+      Array.isArray(priorityTopics) &&
+      priorityTopics.every((topic) => typeof topic === 'string' && isTopic(String(topic)))
+    ) {
+      patch.priorityTopics = priorityTopics as CulturalTopic[];
+    } else {
+      throw new Error('priorityTopics contains invalid topics.');
+    }
+  }
+  if ('wantsHelpWith' in data) {
+    if (!isStringArray(data.wantsHelpWith) && data.wantsHelpWith !== null) {
+      throw new Error('wantsHelpWith must be a string array or null.');
+    }
+    patch.wantsHelpWith = data.wantsHelpWith === null ? [] : (data.wantsHelpWith as string[]);
+  }
+  if ('avoidTopics' in data) {
+    if (!isStringArray(data.avoidTopics) && data.avoidTopics !== null) {
+      throw new Error('avoidTopics must be a string array or null.');
+    }
+    patch.avoidTopics = data.avoidTopics === null ? [] : (data.avoidTopics as string[]);
+  }
+
+  if (Object.keys(patch).length === 0) {
+    throw new Error('Provide at least one profile field to update.');
+  }
+  return patch;
 }
 
 function validateProfile(profile: Record<string, unknown>): ProfileInput {
