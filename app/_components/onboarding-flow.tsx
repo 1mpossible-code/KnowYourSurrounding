@@ -19,6 +19,7 @@ import {
   getSelectedLabels,
 } from '@/lib/onboarding';
 import { emptyProfileResponse } from '@/lib/profile-api';
+import { createBrowserUuid } from '@/lib/browser-uuid';
 import { buildStarterModulePayload, selectStarterGuides, writeStoredStarterGuideJobs } from '@/lib/starter-modules';
 
 const STEPS = [
@@ -379,7 +380,7 @@ export function OnboardingFlow() {
     setError('');
 
     try {
-      const userId = draftUserId || window.crypto.randomUUID();
+      const userId = draftUserId || createBrowserUuid();
       const patch = buildProfilePatchFromOnboarding(form);
       const response = await fetch(`/api/profile/${encodeURIComponent(userId)}`, {
         method: 'PATCH',
